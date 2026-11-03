@@ -45,7 +45,7 @@ The loop is: read the room, plan two or three pushes, execute them, feel the cra
 
 - Every accepted move appends a history entry containing the move direction, whether it was a push, which box moved, and the counters before the move.
 - Undo restores the player position, every box position, `moves` and `pushes` to the values before the last accepted move, and removes that entry. Undo of a rejected move does nothing.
-- Undo is capped by `undo_limit` accepted moves. At the cap, the oldest entries are discarded so the player can rewind at most `undo_limit` moves. The cap does not count rejected moves.
+- Undo is capped by `undo_limit` accepted moves. At the cap, the oldest entries are discarded so the player can rewind at most `undo_limit` moves. The cap does not count rejected moves. `undo_limit` defaults to 100 and accepts 1 to 100; the default equals `GameSession.DEFAULT_UNDO_LIMIT`.
 - Undo never lowers a best record, never lowers a star rating, and never unlocks a level.
 - Undo while a move tween is running cancels the tween and lands directly on the pre-move state.
 
@@ -95,8 +95,8 @@ _来源约定：issue #1、project.godot 或本页引用的既有页面已经固
 | `move_seconds` | 0.13 | 0.08 to 0.20 | seconds for one player step |
 | `push_seconds` | 0.16 | 0.10 to 0.24 | seconds for one crate slide plus player follow |
 | `input_buffer_moves` | 2 | 0 to 4 | moves buffered while a tween runs |
-| `undo_limit` | 50 | 10 to 100 | accepted moves reachable by undo; proposal |
-| `unlimited_undo` | false | false to true | accessibility setting that ignores `undo_limit` |
+| `undo_limit` | 100 | 1 to 100 | accepted moves reachable by undo; equals `GameSession.DEFAULT_UNDO_LIMIT` |
+| `unlimited_undo` | false | false to true | accessibility setting that ignores `undo_limit`; proposal |
 | `timer_precision_ms` | 100 | 100 to 100 | stored integer milliseconds |
 | `win_delay_seconds` | 0.4 | 0.0 to 1.0 | seconds between last push landing and victory panel |
 | `deadlock_chip_seconds` | 3.0 | 1.0 to 6.0 | seconds the warning chip stays |
@@ -120,7 +120,7 @@ All values are tuned in `assets/data/` (levels) or `resources/` settings data, n
 
 ## Open questions
 
-1. **Undo cap vs unlimited (game designer, proposal).** Default 50 with an accessibility toggle to unlimited. Decision needed: whether the cap exists at all for 1.0, since it is a difficulty knob, not a fairness rule.
+1. **Unlimited undo toggle (game designer, proposal).** The cap is 100 accepted moves by default, and `unlimited_undo` ignores it. Decision needed: whether the toggle ships in 1.0, since P2 promises undo is unlimited in effect.
 2. **Line deadlock detection (game designer, proposal).** 1.0 detects only corner deadlock. Decision needed: add "box against a wall with no goal on that wall" detection now or leave it to a post-1.0 tuning pass.
 3. **Mid-level save (producer / game designer, proposal).** Currently quitting mid-level loses the attempt. Decision needed: whether 1.0 restores an in-progress level on relaunch, which changes the save schema in [settings-and-save.md](settings-and-save.md).
 4. **Par authority (game designer, proposal).** Par values in the 20-level plan are hand estimates. Decision needed: whether a solver pass must confirm each `par_moves` before the level is considered shippable.
