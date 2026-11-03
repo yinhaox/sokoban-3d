@@ -39,6 +39,10 @@ const PLATE_SIZE_RATIO := 0.90
 ## Alpha a faded wall's top cap keeps, so a faded border wall still draws an
 ## outline instead of disappearing (issue #9).
 const OCCLUSION_CAP_ALPHA := 0.55
+## How far a crate settles when it comes to rest on a goal plate, so the lit
+## plate and the settle are both visible (design/core-rules.md "the crate
+## settles").
+const CRATE_GOAL_SINK := 0.03
 
 @export var wall_height: float = 1.0
 @export var floor_thickness: float = 0.1
@@ -64,6 +68,12 @@ var _columns: int = 0
 var _rows: int = 0
 var _wall_cells: Array[Vector2i] = []
 var _crate_cells: Array[Vector2i] = []
+var _crate_nodes: Array[MeshInstance3D] = []
+var _player_node: MeshInstance3D
+## Goal cell -> plate node, and the plate's current filled state.
+var _goal_cells: Dictionary = {}
+var _goal_plates: Dictionary = {}
+var _goal_filled: Dictionary = {}
 
 var _floor_material: StandardMaterial3D
 var _wall_side_material: StandardMaterial3D
@@ -148,6 +158,11 @@ func clear() -> void:
 		child.free()
 	_wall_cells.clear()
 	_crate_cells.clear()
+	_crate_nodes.clear()
+	_goal_cells.clear()
+	_goal_plates.clear()
+	_goal_filled.clear()
+	_player_node = null
 	_wall_nodes.clear()
 	_wall_fade_side.clear()
 	_wall_fade_top.clear()
@@ -166,6 +181,93 @@ func crate_cells() -> Array[Vector2i]:
 	var copy: Array[Vector2i] = []
 	copy.assign(_crate_cells)
 	return copy
+
+
+func player_node() -> MeshInstance3D:
+	return _player_node
+
+
+## Crate piece by box index, or null when the index has no crate.
+func crate_node(index: int) -> MeshInstance3D:
+	if index < 0 or index >= _crate_nodes.size():
+		return null
+	return _crate_nodes[index]
+
+
+## World position of the player piece for a cell, matching `_build_player()`.
+func player_world_position(cell: Vector2i) -> Vector3:
+	var centre := cell_to_world(cell, _columns, _rows)
+	centre.y = _player_mesh_height() * 0.5 + ACTOR_LIFT
+	return centre
+
+
+## World position of a crate for a cell. A crate resting on a goal plate settles
+## by `CRATE_GOAL_SINK`, which is the visible acknowledgement of a filled plate.
+func crate_world_position(cell: Vector2i, on_goal: bool) -> Vector3:
+	var centre := cell_to_world(cell, _columns, _rows)
+	centre.y = crate_size * 0.5 + ACTOR_LIFT
+	return centre - Vector3(0.0, CRATE_GOAL_SINK if on_goal else 0.0, 0.0)
+
+
+## Whether the goal plate at `cell` is drawn in its filled state.
+func is_goal_filled(cell: Vector2i) -> bool:
+	return bool(_goal_filled.get(cell, false))
+
+
+func set_player_cell(cell: Vector2i) -> void:
+	player_cell = cell
+
+
+func set_crate_cell(index: int, cell: Vector2i) -> void:
+	if index < 0 or index >= _crate_cells.size():
+		return
+	_crate_cells[index] = cell
+
+
+## Swaps a crate's body and top marker to the on-goal palette entry.
+func set_crate_on_goal(index: int, on_goal: bool) -> void:
+	var crate := crate_node(index)
+	if crate == null:
+		return
+	crate.material_override = _crate_on_goal_material if on_goal else _crate_material
+	for child in crate.get_children():
+		if child is MeshInstance3D:
+			(child as MeshInstance3D).material_override = (
+				_crate_material if on_goal else _marker_material
+			)
+
+
+## Lights or dims one goal plate. The filled material is the emissive palette
+## entry, so a crate landing on a plate changes the plate on screen.
+func set_goal_filled(cell: Vector2i, filled: bool) -> void:
+	var plate := _goal_plates.get(cell) as MeshInstance3D
+	if plate == null:
+		return
+	plate.material_override = _goal_filled_material if filled else _goal_empty_material
+	_goal_filled[cell] = filled
+
+
+## Re-lights every goal plate from the current box cells.
+func refresh_goal_fills(boxes: Array[Vector2i]) -> void:
+	for cell: Vector2i in _goal_cells.keys():
+		set_goal_filled(cell, boxes.has(cell))
+
+
+## Lands every actor on the given cells with no tween. Used for undo and restart,
+## so a reset never rebuilds the room and never flickers.
+func sync_actors(player: Vector2i, boxes: Array[Vector2i]) -> void:
+	player_cell = player
+	if _player_node != null:
+		_player_node.position = player_world_position(player)
+	for index: int in _crate_nodes.size():
+		if index >= boxes.size():
+			break
+		var cell: Vector2i = boxes[index]
+		_crate_cells[index] = cell
+		var on_goal: bool = _goal_cells.has(cell)
+		set_crate_on_goal(index, on_goal)
+		_crate_nodes[index].position = crate_world_position(cell, on_goal)
+	refresh_goal_fills(boxes)
 
 
 func cell_centre(cell: Vector2i) -> Vector3:
@@ -341,7 +443,11 @@ func _build_goals(level: LevelDataScript) -> void:
 		var material := _goal_filled_material if filled else _goal_empty_material
 		var centre := cell_to_world(cell, _columns, _rows)
 		centre.y = plate_thickness * 0.5 + PLATE_LIFT
-		_add_box(size, centre, material, "Goal_%d_%d" % [cell.x, cell.y])
+		_goal_cells[cell] = true
+		_goal_plates[cell] = _add_box(
+			size, centre, material, "Goal_%d_%d" % [cell.x, cell.y]
+		)
+		_goal_filled[cell] = filled
 		var ring_centre := cell_to_world(cell, _columns, _rows)
 		ring_centre.y = plate_top + ring_radius
 		_add_torus(ring_centre, _goal_ring_material, "GoalRing_%d_%d" % [cell.x, cell.y])
@@ -376,28 +482,34 @@ func _build_crates(level: LevelDataScript) -> void:
 	for index in level.box_starts.size():
 		var cell := level.box_starts[index]
 		_crate_cells.append(cell)
-		var material := _crate_on_goal_material if level.is_goal(cell) else _crate_material
-		var centre := cell_to_world(cell, _columns, _rows)
-		centre.y = crate_size * 0.5 + ACTOR_LIFT
-		_add_box(Vector3(crate_size, crate_size, crate_size), centre, material, "Crate_%d" % index)
-		var marker := _crate_material if level.is_goal(cell) else _marker_material
-		_add_crate_cross(cell, marker)
+		var on_goal: bool = level.is_goal(cell)
+		var material := _crate_on_goal_material if on_goal else _crate_material
+		var crate := _add_box(
+			Vector3(crate_size, crate_size, crate_size),
+			crate_world_position(cell, on_goal),
+			material,
+			"Crate_%d" % index
+		)
+		_crate_nodes.append(crate)
+		var marker := _crate_material if on_goal else _marker_material
+		_add_crate_cross(crate, marker)
 
 
-func _add_crate_cross(cell: Vector2i, material: StandardMaterial3D) -> void:
-	var top := cell_to_world(cell, _columns, _rows)
-	top.y = crate_size + ACTOR_LIFT + CROSS_HEIGHT * 0.5 + PLATE_LIFT
+func _add_crate_cross(crate: MeshInstance3D, material: StandardMaterial3D) -> void:
+	var local_top := crate_size * 0.5 + CROSS_HEIGHT * 0.5 + PLATE_LIFT
 	var arm_length := crate_size * CROSS_ARM_LENGTH_RATIO
 	var arm_width := crate_size * CROSS_ARM_WIDTH_RATIO
 	var arm_size := Vector3(arm_length, CROSS_HEIGHT, arm_width)
-	_add_box(arm_size, top, material, "CrateCross_%d_%d_x" % [cell.x, cell.y])
-	var arm_z := _add_box(arm_size, top, material, "CrateCross_%d_%d_z" % [cell.x, cell.y])
+	_add_box_child(crate, arm_size, Vector3(0.0, local_top, 0.0), material, "CrossX")
+	var arm_z := _add_box_child(
+		crate, arm_size, Vector3(0.0, local_top, 0.0), material, "CrossZ"
+	)
 	arm_z.rotation.y = PI * 0.5
 
 
 func _build_player(level: LevelDataScript) -> void:
 	player_cell = level.player_start
-	var capsule_height := maxf(player_height, player_radius * 2.0 + CAPSULE_HEIGHT_EPSILON)
+	var capsule_height := _player_mesh_height()
 	var mesh := CapsuleMesh.new()
 	mesh.radius = player_radius
 	mesh.height = capsule_height
@@ -405,10 +517,28 @@ func _build_player(level: LevelDataScript) -> void:
 	instance.name = "Player"
 	instance.mesh = mesh
 	instance.material_override = _player_material
-	var centre := cell_to_world(player_cell, _columns, _rows)
-	centre.y = capsule_height * 0.5 + ACTOR_LIFT
-	instance.position = centre
+	instance.position = player_world_position(player_cell)
 	add_child(instance)
+	_player_node = instance
+
+
+## CapsuleMesh needs a height of at least two radii.
+func _player_mesh_height() -> float:
+	return maxf(player_height, player_radius * 2.0 + CAPSULE_HEIGHT_EPSILON)
+
+
+func _add_box_child(
+	parent: Node3D, size: Vector3, centre: Vector3, material: Material, node_name: String
+) -> MeshInstance3D:
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	var instance := MeshInstance3D.new()
+	instance.name = node_name
+	instance.mesh = mesh
+	instance.material_override = material
+	instance.position = centre
+	parent.add_child(instance)
+	return instance
 
 
 func _add_box(

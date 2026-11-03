@@ -1,0 +1,6 @@
+[capture] removed stale file: C:\Users\yinha\.dsh\state\superagent-sokoban\work\playable-moves-176181f579e7\production\qa\evidence\playable-moves\after-push.png
+[capture] target: C:\Users\yinha\.dsh\state\superagent-sokoban\work\playable-moves-176181f579e7\production\qa\evidence\playable-moves\after-push.png
+[capture] user arguments: --script=right,right
+[capture] waiting up to 60s for the PNG
+$ D:/SteamLibrary/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe --path . -- --studio-capture=C:\Users\yinha\.dsh\state\superagent-sokoban\work\playable-moves-176181f579e7\production\qa\evidence\playable-moves\after-push.png --script=right,right
+[capture] OK: C:\Users\yinha\.dsh\state\superagent-sokoban\work\playable-moves-176181f579e7\production\qa\evidence\playable-moves\after-push.png (32066 bytes)
