@@ -1,0 +1,6 @@
+[capture] removed stale file: .\production\qa\evidence\visual-polish\level-010-quarter-turn-1.png
+[capture] target: .\production\qa\evidence\visual-polish\level-010-quarter-turn-1.png
+[capture] user arguments: --level=level-010
+[capture] waiting up to 60s for the PNG
+$ godot --path . -- --studio-capture=.\production\qa\evidence\visual-polish\level-010-quarter-turn-1.png --level=level-010
+[capture] OK: .\production\qa\evidence\visual-polish\level-010-quarter-turn-1.png (70917 bytes)
