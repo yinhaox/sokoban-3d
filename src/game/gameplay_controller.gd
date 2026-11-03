@@ -18,7 +18,9 @@ extends Node3D
 
 signal victory(stats: Dictionary, has_next: bool)
 signal attempt_changed(stats: Dictionary)
+signal cue_requested(cue: String)
 
+const AudioDirectorScript = preload("res://src/audio/audio_director.gd")
 const LevelDataScript = preload("res://src/logic/level_data.gd")
 const GameSessionScript = preload("res://src/logic/game_session.gd")
 const BoardBuilderScript = preload("res://src/game/board_builder.gd")
@@ -143,6 +145,7 @@ func undo() -> bool:
 	if not session.undo():
 		return false
 	_sync_from_session()
+	_emit_cue(AudioDirectorScript.CUE_UNDO)
 	_emit_attempt_changed()
 	return true
 
@@ -163,6 +166,7 @@ func restart_level() -> void:
 	_victory_payload.clear()
 	_victory_scheduled = false
 	_sync_from_session()
+	_emit_cue(AudioDirectorScript.CUE_RESTART)
 	_emit_attempt_changed()
 
 
@@ -195,17 +199,27 @@ func attempt_stats() -> Dictionary:
 	}
 
 
-## Feeds a comma-separated direction list through the normal move path. Used by
-## the capture aid so a screenshot shows a state the game really reached, not a
-## hand-placed pose. Returns false when an entry is not a direction or is
-## rejected, and reports why.
+## Feeds a comma-separated action list through the normal move, undo and restart
+## paths. Used by the capture and evidence aids so a screenshot or a cue log shows
+## a state the game really reached, not a hand-placed pose. Besides directions the
+## list accepts `undo` and `restart`. Returns false when an entry is not a known
+## action or is rejected, and reports why.
 func apply_move_script(script_text: String) -> bool:
 	var tokens := script_text.split(",", false)
 	if tokens.is_empty():
 		return false
 	var applied := true
 	for token: String in tokens:
-		var direction := direction_for_name(token)
+		var action := token.strip_edges().to_lower()
+		if action == "undo":
+			if not undo():
+				push_warning("gameplay: capture script undo was refused")
+				applied = false
+			continue
+		if action == "restart":
+			restart_level()
+			continue
+		var direction := direction_for_name(action)
 		if direction < 0:
 			push_warning("gameplay: capture script entry '%s' is not a direction" % token)
 			applied = false
@@ -327,13 +341,21 @@ func _on_move_committed(_direction: int, was_push: bool, box_index: int) -> void
 	if not _timer_running:
 		_timer_running = true
 	_board.set_player_cell(session.player)
+	var landed_on_goal := false
 	if was_push and box_index >= 0 and box_index < session.boxes.size():
 		var box_cell: Vector2i = session.boxes[box_index]
+		landed_on_goal = _level.is_goal(box_cell)
 		_board.set_crate_cell(box_index, box_cell)
-		var crate_target := _board.crate_world_position(box_cell, _level.is_goal(box_cell))
+		var crate_target := _board.crate_world_position(box_cell, landed_on_goal)
 		_animate_push(box_index, _board.player_world_position(session.player), crate_target)
 	else:
 		_animate_step(_board.player_world_position(session.player))
+	if was_push:
+		_emit_cue(AudioDirectorScript.CUE_PUSH)
+		if landed_on_goal:
+			_emit_cue(AudioDirectorScript.CUE_LAND)
+	else:
+		_emit_cue(AudioDirectorScript.CUE_STEP)
 	_emit_attempt_changed()
 
 
@@ -465,7 +487,13 @@ func _emit_victory() -> void:
 		return
 	var payload: Dictionary = _victory_payload.duplicate()
 	_victory_payload.clear()
+	_emit_cue(AudioDirectorScript.CUE_WIN)
 	victory.emit(payload, _has_next_level)
+
+
+## Presentation cues never change state, so a missing listener cannot block play.
+func _emit_cue(cue: String) -> void:
+	cue_requested.emit(cue)
 
 
 func _kill_tween() -> void:

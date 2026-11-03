@@ -1,0 +1,88 @@
+[run] user arguments: --screen=gameplay --script=right,right,undo,restart,right,right,down,right,up,up --quit-after=5 --audio-log --save=user://evidence-save-audio-run.json --fresh-save
+[run] launching the game window; close it to return control
+$ godot --path . -- --screen=gameplay --script=right,right,undo,restart,right,right,down,right,up,up --quit-after=5 --audio-log --save=user://evidence-save-audio-run.json --fresh-save
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 616.56 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 3070 Ti Laptop GPU
+
+WARNING: save: no profile at user://evidence-save-audio-run.json; starting fresh
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] load_profile (res://src/logic/save_store.gd:75)
+       [1] _setup_save_store (res://src/main.gd:175)
+       [2] _ready (res://src/main.gd:107)
+WARNING: audio: cue step
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] play_cue (res://src/audio/audio_director.gd:156)
+       [1] _emit_cue (res://src/game/gameplay_controller.gd:496)
+       [2] _on_move_committed (res://src/game/gameplay_controller.gd:358)
+       [3] _commit_step (res://src/logic/game_session.gd:137)
+       [4] try_move (res://src/logic/game_session.gd:74)
+       [5] request_move (res://src/game/gameplay_controller.gd:120)
+       [6] apply_move_script (res://src/game/gameplay_controller.gd:227)
+       [7] _start_level (res://src/main.gd:417)
+       [8] _apply_capture_screen (res://src/main.gd:624)
+       [9] _ready (res://src/main.gd:118)
+WARNING: audio: cue push
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] play_cue (res://src/audio/audio_director.gd:156)
+       [1] _emit_cue (res://src/game/gameplay_controller.gd:496)
+       [2] _on_move_committed (res://src/game/gameplay_controller.gd:354)
+       [3] _commit_push (res://src/logic/game_session.gd:148)
+       [4] try_move (res://src/logic/game_session.gd:79)
+       [5] request_move (res://src/game/gameplay_controller.gd:120)
+       [6] apply_move_script (res://src/game/gameplay_controller.gd:227)
+       [7] _start_level (res://src/main.gd:417)
+       [8] _apply_capture_screen (res://src/main.gd:624)
+       [9] _ready (res://src/main.gd:118)
+WARNING: audio: cue undo
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] play_cue (res://src/audio/audio_director.gd:156)
+       [1] _emit_cue (res://src/game/gameplay_controller.gd:496)
+       [2] undo (res://src/game/gameplay_controller.gd:148)
+       [3] apply_move_script (res://src/game/gameplay_controller.gd:215)
+       [4] _start_level (res://src/main.gd:417)
+       [5] _apply_capture_screen (res://src/main.gd:624)
+       [6] _ready (res://src/main.gd:118)
+WARNING: audio: cue restart
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] play_cue (res://src/audio/audio_director.gd:156)
+       [1] _emit_cue (res://src/game/gameplay_controller.gd:496)
+       [2] restart_level (res://src/game/gameplay_controller.gd:169)
+       [3] apply_move_script (res://src/game/gameplay_controller.gd:220)
+       [4] _start_level (res://src/main.gd:417)
+       [5] _apply_capture_screen (res://src/main.gd:624)
+       [6] _ready (res://src/main.gd:118)
+WARNING: audio: cue land
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] play_cue (res://src/audio/audio_director.gd:156)
+       [1] _emit_cue (res://src/game/gameplay_controller.gd:496)
+       [2] _on_move_committed (res://src/game/gameplay_controller.gd:356)
+       [3] _commit_push (res://src/logic/game_session.gd:148)
+       [4] try_move (res://src/logic/game_session.gd:79)
+       [5] request_move (res://src/game/gameplay_controller.gd:120)
+       [6] apply_move_script (res://src/game/gameplay_controller.gd:227)
+       [7] _start_level (res://src/main.gd:417)
+       [8] _apply_capture_screen (res://src/main.gd:624)
+       [9] _ready (res://src/main.gd:118)
+WARNING: audio: cue win
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] play_cue (res://src/audio/audio_director.gd:156)
+       [1] _emit_cue (res://src/game/gameplay_controller.gd:496)
+       [2] _emit_victory (res://src/game/gameplay_controller.gd:490)
+       [3] _schedule_victory (res://src/game/gameplay_controller.gd:482)
+       [4] _on_level_completed (res://src/game/gameplay_controller.gd:381)
+       [5] _check_win (res://src/logic/game_session.gd:191)
+       [6] _commit_push (res://src/logic/game_session.gd:150)
+       [7] try_move (res://src/logic/game_session.gd:79)
+       [8] request_move (res://src/game/gameplay_controller.gd:120)
+       [9] apply_move_script (res://src/game/gameplay_controller.gd:227)
+       [10] _start_level (res://src/main.gd:417)
+       [11] _apply_capture_screen (res://src/main.gd:624)
+       [12] _ready (res://src/main.gd:118)
+[run] Godot exited with code 0

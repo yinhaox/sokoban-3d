@@ -21,6 +21,7 @@ extends Node3D
 
 const LevelDataScript = preload("res://src/logic/level_data.gd")
 const BoardBuilderScript = preload("res://src/game/board_builder.gd")
+const AudioDirectorScript = preload("res://src/audio/audio_director.gd")
 const CameraRigScript = preload("res://src/game/camera_rig.gd")
 const GameplayControllerScript = preload("res://src/game/gameplay_controller.gd")
 const LevelSequenceScript = preload("res://src/game/level_sequence.gd")
@@ -49,6 +50,9 @@ const CAPTURE_SAVE_ARG := "--save="
 const CAPTURE_FRESH_SAVE_ARG := "--fresh-save"
 const CAPTURE_LANGUAGE_ARG := "--language="
 const CAPTURE_COLORBLIND_ARG := "--colorblind="
+const CAPTURE_SFX_VOLUME_ARG := "--sfx-volume="
+const CAPTURE_AUDIO_LOG_ARG := "--audio-log"
+const CAPTURE_QUIT_AFTER_ARG := "--quit-after="
 const CAPTURE_FLAG := "--studio-capture="
 const BOOT_LANG_ARG := "--lang="
 const BOOT_REDUCE_MOTION_ARG := "--reduce-motion="
@@ -127,6 +131,8 @@ enum ConfirmAction { NONE, RESTART, MAIN_MENU }
 
 var router: ScreenRouterScript
 var save_store: SaveStoreScript
+## Holds the synthesized cue player; a story cannot add an autoload to project.godot.
+var audio: AudioDirectorScript
 
 var _level_paths: Array[String] = []
 var _level_index: int = 0
@@ -152,7 +158,9 @@ func _ready() -> void:
 	_boot = parse_boot_arguments(_cmdline_user_arguments())
 	_report_boot_warnings(_boot)
 	_setup_save_store()
+	_setup_audio()
 	_apply_settings()
+	_apply_quit_after()
 	if get_tree() != null:
 		get_tree().auto_accept_quit = false
 	_capture_script = str(_boot.get("script", ""))
@@ -168,6 +176,34 @@ func _ready() -> void:
 ## Which screen the player is on, as `ScreenRouter.Screen`.
 func current_screen() -> int:
 	return router.screen if router != null else ScreenRouterScript.Screen.MAIN_MENU
+
+
+## The cue player lives under the boot scene: project.godot is outside a story writer's
+## boundary, so an autoload is not an option. Gameplay emits `cue_requested`; the
+## director also wires every button already in the tree.
+func _setup_audio() -> void:
+	audio = AudioDirectorScript.new()
+	audio.name = "AudioDirector"
+	add_child(audio)
+	audio.set_logging(has_capture_argument(CAPTURE_AUDIO_LOG_ARG))
+	_gameplay.cue_requested.connect(audio.play_cue)
+
+
+## A diagnostic aid so a timed run returns control to its evidence log.
+func _apply_quit_after() -> void:
+	var raw := capture_argument(CAPTURE_QUIT_AFTER_ARG)
+	if raw.is_empty():
+		return
+	if not raw.is_valid_float():
+		push_warning("main: --quit-after=%s is not a number of seconds" % raw)
+		return
+	var timer: SceneTreeTimer = get_tree().create_timer(maxf(raw.to_float(), 0.1))
+	timer.timeout.connect(_quit_timed_run)
+
+
+func _quit_timed_run() -> void:
+	if get_tree() != null:
+		get_tree().quit()
 
 
 ## Persists the profile when the window is closed through the normal close path.
@@ -269,6 +305,10 @@ func _apply_settings() -> void:
 
 
 func _apply_audio(settings: Dictionary) -> void:
+	if audio != null:
+		audio.apply_volumes(
+			float(settings.get(SettingsModelScript.MASTER_VOLUME, 0.8)),
+			float(settings.get(SettingsModelScript.SFX_VOLUME, 0.9)))
 	var master := AudioServer.get_bus_index("Master")
 	_apply_bus_volume(master, float(settings.get(SettingsModelScript.MASTER_VOLUME, 0.8)))
 	var sfx := AudioServer.get_bus_index("SFX")
