@@ -16,6 +16,8 @@ const LevelDataClass = preload("res://src/logic/level_data.gd")
 const GameSessionClass = preload("res://src/logic/game_session.gd")
 const DeadlockClass = preload("res://src/logic/deadlock.gd")
 const MoveRecordClass = preload("res://src/logic/move_record.gd")
+const BoardBuilderClass = preload("res://src/game/board_builder.gd")
+const CameraRigClass = preload("res://src/game/camera_rig.gd")
 
 const LEVEL_FILES := ["level-001", "level-002", "level-003"]
 const LEVEL_DIRECTORY := "res://assets/data/levels/%s.json"
@@ -131,7 +133,6 @@ var _completed_stats: Array[Dictionary] = []
 
 
 func _init() -> void:
-	_test_main_helpers()
 	_test_main_scene()
 	_test_project_settings()
 	_test_level_data_valid()
@@ -149,6 +150,8 @@ func _init() -> void:
 	_test_deadlock_predicate()
 	_test_deadlock_on_push()
 	_test_level_files()
+	_test_board_builder()
+	_test_camera_rig()
 
 	if _failed == 0:
 		print("PASS: %d checks passed" % _passed)
@@ -168,13 +171,6 @@ func _check(condition: bool, label: String) -> void:
 		printerr("FAIL: %s" % label)
 
 
-func _test_main_helpers() -> void:
-	_check(MAIN_SCRIPT.title_text() == "Game Studio", "main.title_text() returns the studio title")
-	_check(MAIN_SCRIPT.status_text(0) == "Game Studio (0 frames)", "main.status_text(0) formats zero frames")
-	_check(MAIN_SCRIPT.status_text(7) == "Game Studio (7 frames)", "main.status_text(7) formats seven frames")
-	_check(MAIN_SCRIPT.status_text(-3) == "Game Studio (0 frames)", "main.status_text() clamps negative frames")
-
-
 func _test_main_scene() -> void:
 	_check(ResourceLoader.exists(MAIN_SCENE_PATH), "scenes/main.tscn exists")
 
@@ -188,17 +184,31 @@ func _test_main_scene() -> void:
 	if root == null:
 		_check(false, "scenes/main.tscn instantiates")
 		return
-	_check(root is Node2D, "main scene root is a Node2D")
+	_check(root is Node3D, "main scene root is a Node3D")
 	_check(str(root.name) == "Main", "main scene root is named Main")
 
 	var attached := root.get_script() as Script
 	_check(attached != null and attached.resource_path == "res://src/main.gd", "main scene root runs src/main.gd")
 
-	var label := root.get_node_or_null("Title") as Label
-	_check(label != null, "main scene has a Title label")
-	if label != null:
-		_check(label.text == "Game Studio", "Title label reads Game Studio")
+	var light := root.get_node_or_null("DirectionalLight3D") as DirectionalLight3D
+	_check(light != null, "main scene carries a DirectionalLight3D")
+	if light != null:
+		_check(light.shadow_enabled, "the directional light casts shadows")
+	_check(root.get_node_or_null("WorldEnvironment") is WorldEnvironment, "main scene carries a WorldEnvironment")
+
+	var camera := root.get_node_or_null("CameraRig/Camera3D") as Camera3D
+	_check(camera != null, "main scene carries a Camera3D under the camera rig")
+	if camera != null:
+		_check(camera.projection == Camera3D.PROJECTION_ORTHOGONAL, "the camera uses orthogonal projection")
+
+	var board := root.get_node_or_null("Board")
+	_check(board != null and board.get_script() == BoardBuilderClass, "main scene carries the board builder")
 	root.free()
+
+	var level := MAIN_SCRIPT.load_level_file("res://assets/data/levels/level-001.json")
+	_check(level != null and level.is_valid(), "the boot level path loads level-001")
+	if level != null:
+		_check(level.id == "level-001", "the boot level is level-001")
 
 
 func _test_project_settings() -> void:
@@ -642,6 +652,130 @@ func _test_level_files() -> void:
 	_check(session.is_won, "level 001 is solvable from its file")
 	_check(session.moves == first.par_moves, "level 001 is solved within its par moves")
 	_check(session.pushes == first.par_pushes, "level 001 is solved within its par pushes")
+
+
+func _test_board_builder() -> void:
+	_check(
+		BoardBuilderClass.cell_to_world(Vector2i(0, 0), 7, 7) == Vector3(-3.0, 0.0, -3.0),
+		"cell (0,0) of a 7x7 room is at (-3,0,-3)"
+	)
+	_check(
+		BoardBuilderClass.cell_to_world(Vector2i(6, 6), 7, 7) == Vector3(3.0, 0.0, 3.0),
+		"cell (6,6) of a 7x7 room is at (3,0,3)"
+	)
+	var centred := BoardBuilderClass.cell_to_world(Vector2i(7, 7), 15, 15)
+	_check(centred == Vector3.ZERO, "the centre cell of a 15x15 room is at the origin")
+	var step := BoardBuilderClass.cell_to_world(Vector2i(3, 4), 7, 7) - BoardBuilderClass.cell_to_world(
+		Vector2i(2, 4), 7, 7
+	)
+	_check(step == Vector3(1.0, 0.0, 0.0), "one cell is exactly one world unit")
+	var neighbour := BoardBuilderClass.cell_to_world(Vector2i(3, 4), 7, 7)
+	_check(BoardBuilderClass.world_to_cell(neighbour, 7, 7) == Vector2i(3, 4), "world_to_cell inverts cell_to_world")
+
+	var level := _make_level(BASIC_TILES)
+	_check(BoardBuilderClass.level_centre(level) == Vector3.ZERO, "level_centre centres a rectangular room")
+
+	var board := BoardBuilderClass.new()
+	board.build(level)
+	_check(board.player_cell == level.player_start, "the board places the player on the player start")
+	var player := board.get_node_or_null("Player") as MeshInstance3D
+	_check(player != null, "the board builds a player piece")
+	if player != null:
+		var expected := BoardBuilderClass.cell_to_world(level.player_start, 7, 7)
+		_check(
+			is_equal_approx(player.position.x, expected.x) and is_equal_approx(player.position.z, expected.z),
+			"the player piece sits on its cell"
+		)
+		_check(player.position.y > 0.0, "the player capsule is above the floor")
+	var crate := board.get_node_or_null("Crate_0") as MeshInstance3D
+	_check(crate != null, "the board builds a crate for every crate start")
+	if crate != null:
+		var expected := BoardBuilderClass.cell_to_world(level.box_starts[0], 7, 7)
+		_check(
+			is_equal_approx(crate.position.x, expected.x) and is_equal_approx(crate.position.z, expected.z),
+			"the crate sits on its cell"
+		)
+		_check(
+			crate.position.y - board.crate_size * 0.5 > 0.0,
+			"the crate bottom face is above the floor top face"
+		)
+	var goal := board.get_node_or_null("Goal_5_1") as MeshInstance3D
+	_check(goal != null, "the board builds a goal plate for every goal")
+	if goal != null:
+		_check(
+			goal.position.y - board.plate_thickness * 0.5 > 0.0,
+			"the goal plate bottom face is above the floor top face"
+		)
+	_check(board.get_node_or_null("Wall_0_0") != null, "the board builds walls from the wall cells")
+	_check(board.get_node_or_null("WallTop_0_0") != null, "each wall carries a darker top cap")
+	_check(board.wall_cells().size() == 24, "a 7x7 room has 24 wall cells")
+	board.free()
+
+
+func _test_camera_rig() -> void:
+	_check(CameraRigClass.snap_yaw_degrees(45.0, 0) == 45.0, "quarter turn 0 keeps the default yaw")
+	_check(CameraRigClass.snap_yaw_degrees(45.0, 1) == 135.0, "one quarter turn adds 90 degrees")
+	_check(CameraRigClass.snap_yaw_degrees(45.0, 4) == 45.0, "four quarter turns return to the default yaw")
+	_check(CameraRigClass.snap_yaw_degrees(45.0, -1) == 315.0, "a negative quarter turn wraps to 315 degrees")
+
+	_check(CameraRigClass.clamp_pitch_degrees(20.0) == 30.0, "a pitch below 30 degrees is clamped")
+	_check(CameraRigClass.clamp_pitch_degrees(40.0) == 40.0, "the default pitch is inside its limits")
+	_check(CameraRigClass.clamp_pitch_degrees(70.0) == 55.0, "a pitch above 55 degrees is clamped")
+
+	_check(
+		is_equal_approx(CameraRigClass.apply_zoom_step(1.0, 1, 0.1, 0.6, 1.8), 1.1),
+		"a zoom step moves the multiplier by one step"
+	)
+	_check(CameraRigClass.apply_zoom_step(0.6, -1, 0.1, 0.6, 1.8) == 0.6, "zoom stops at the lower bound")
+	_check(CameraRigClass.apply_zoom_step(1.8, 1, 0.1, 0.6, 1.8) == 1.8, "zoom stops at the upper bound")
+
+	var small: Array[Vector3] = [
+		Vector3(-3.5, 0.0, -3.5),
+		Vector3(3.5, 0.0, 3.5),
+		Vector3(-3.5, 1.0, 3.5),
+		Vector3(3.5, 1.0, -3.5),
+	]
+	var aspect := 1152.0 / 648.0
+	var fitted := CameraRigClass.fit_orthogonal_size(small, 45.0, 40.0, aspect, 0.8, 6.0, 18.0)
+	_check(fitted > 6.0 and fitted < 18.0, "the 7x7 room fits inside the camera size bounds")
+	var huge: Array[Vector3] = [Vector3(-50.0, 0.0, -50.0), Vector3(50.0, 0.0, 50.0)]
+	_check(
+		is_equal_approx(CameraRigClass.fit_orthogonal_size(huge, 45.0, 40.0, aspect, 0.8, 6.0, 18.0), 18.0),
+		"a large room clamps at the maximum camera size"
+	)
+	var tiny: Array[Vector3] = [Vector3(-0.1, 0.0, -0.1), Vector3(0.1, 0.0, 0.1)]
+	_check(
+		is_equal_approx(CameraRigClass.fit_orthogonal_size(tiny, 45.0, 40.0, aspect, 0.8, 6.0, 18.0), 6.0),
+		"a tiny room clamps at the minimum camera size"
+	)
+
+	var cells := CameraRigClass.cells_on_segment(Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, 6.0), 1.0, 7, 7)
+	_check(cells.has(Vector2i(3, 3)), "the column walk crosses the middle cell")
+	_check(cells.has(Vector2i(3, 6)), "the column walk crosses the last row")
+
+	var wall_cells: Array[Vector2i] = []
+	for column in 7:
+		wall_cells.append(Vector2i(column, 0))
+		wall_cells.append(Vector2i(column, 6))
+	for row in range(1, 6):
+		wall_cells.append(Vector2i(0, row))
+		wall_cells.append(Vector2i(6, row))
+	var targets: Array[Vector3] = [BoardBuilderClass.cell_to_world(Vector2i(2, 3), 7, 7)]
+	var camera_ground := Vector3(14.14, 0.0, 14.14)
+	var occluded := CameraRigClass.occluded_wall_cells(camera_ground, targets, wall_cells, 1.0, 7, 7)
+	_check(not occluded.is_empty(), "a near wall between the camera and the player is marked for fade")
+	var near_side := false
+	for cell in occluded:
+		if cell.x == 6 or cell.y == 6:
+			near_side = true
+		_check(wall_cells.has(cell), "every faded cell is a wall cell")
+	_check(near_side, "the faded walls are on the camera side of the room")
+	_check(not occluded.has(Vector2i(0, 0)), "a wall behind the player is not faded")
+	var no_targets: Array[Vector3] = []
+	_check(
+		CameraRigClass.occluded_wall_cells(camera_ground, no_targets, wall_cells, 1.0, 7, 7).is_empty(),
+		"no targets means no faded walls"
+	)
 
 
 func _level_dictionary(tiles: Array, overrides: Dictionary = {}) -> Dictionary:
