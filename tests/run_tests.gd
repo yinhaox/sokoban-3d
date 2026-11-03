@@ -1830,6 +1830,38 @@ func _test_save_round_trip() -> void:
 	reloaded.free()
 	adopted.free()
 	_clean_save_test_files(path)
+	var future_path := "user://test-save-unknown.json"
+	_clean_save_test_files(future_path)
+	_write_test_text(
+		future_path,
+		JSON.stringify(
+			{
+				"version": 1,
+				"unlocked": ["level-001"],
+				"levels": {},
+				"settings": {},
+				"stats": {"total_moves": 7},
+				"future_field": {"kept": true},
+			}
+		)
+	)
+	var future_store := SaveStoreClass.new()
+	future_store.configure(future_path)
+	future_store.load_profile()
+	_check(future_store.data().has("future_field"), "an unknown top-level key is preserved")
+	_check(
+		int((future_store.data().get("stats", {}) as Dictionary).get("total_moves", 0)) == 7,
+		"lifetime stats are preserved"
+	)
+	future_store.save_now()
+	var rewritten: Variant = JSON.parse_string(_read_test_text(future_path))
+	_check(
+		rewritten is Dictionary
+		and ((rewritten as Dictionary).get("future_field", {}) as Dictionary).get("kept", false),
+		"the unknown key is written back after a round trip"
+	)
+	future_store.free()
+	_clean_save_test_files(future_path)
 
 
 func _test_save_corrupt_recovery() -> void:

@@ -41,6 +41,9 @@ const NOTICE_CORRUPT := "ui_notice_corrupt"
 const NOTICE_NEWER := "ui_notice_newer"
 const NOTICE_SAVE_FAILED := "ui_notice_save_failed"
 
+## Lifetime counters kept in `stats`; every one is a non-negative integer.
+const STAT_COUNTER_KEYS: Array[String] = ["total_moves", "total_plays", "total_undos"]
+
 const FIRST_LEVEL_ID := "level-001"
 
 var path: String = DEFAULT_PATH
@@ -355,34 +358,59 @@ static func _migrate_v0_to_v1(legacy: Dictionary) -> Dictionary:
 
 
 ## Validates and fills one profile dictionary. Missing sections take their
-## default; a wrong type is replaced with the default and logged.
+## default; a wrong type is replaced with the default and logged. Keys the build
+## does not know are kept, so a downgrade does not destroy data it did not
+## understand (design/settings-and-save.md "Save file").
 func _normalize(parsed: Dictionary) -> Dictionary:
-	var result := _fresh_data()
-	var unlocked: Variant = parsed.get("unlocked")
-	if unlocked is Array:
-		var ids: Array = []
-		for value: Variant in unlocked:
-			if value is String and not ids.has(value):
-				ids.append(value)
-		result["unlocked"] = ids
-	elif unlocked != null:
-		push_warning("save: unlocked is not an array; starting with no unlock")
-	var levels: Variant = parsed.get("levels")
-	if levels is Dictionary:
-		var records := {}
-		for level_id: Variant in (levels as Dictionary).keys():
-			var record: Variant = (levels as Dictionary)[level_id]
-			if record is Dictionary:
-				records[str(level_id)] = _normalize_record(record as Dictionary)
-		result["levels"] = records
-	elif levels != null:
-		push_warning("save: levels is not an object; dropping its records")
-	var settings: Variant = parsed.get("settings")
-	if settings is Dictionary:
-		result["settings"] = SettingsModel.sanitize(settings as Dictionary)
-	elif settings != null:
-		push_warning("save: settings is not an object; using defaults")
+	var result := parsed.duplicate(true)
+	result["version"] = CURRENT_VERSION
+	result["unlocked"] = _normalize_unlocked(parsed.get("unlocked"))
+	result["levels"] = _normalize_levels(parsed.get("levels"))
+	result["settings"] = _normalize_settings(parsed.get("settings"))
+	result["stats"] = _normalize_stats(parsed.get("stats"))
 	return result
+
+
+func _normalize_unlocked(unlocked: Variant) -> Array:
+	if not (unlocked is Array):
+		if unlocked != null:
+			push_warning("save: unlocked is not an array; starting with no unlock")
+		return []
+	var ids: Array = []
+	for value: Variant in unlocked:
+		if value is String and not ids.has(value):
+			ids.append(value)
+	return ids
+
+
+func _normalize_levels(levels: Variant) -> Dictionary:
+	if not (levels is Dictionary):
+		if levels != null:
+			push_warning("save: levels is not an object; dropping its records")
+		return {}
+	var records := {}
+	for level_id: Variant in (levels as Dictionary).keys():
+		var record: Variant = (levels as Dictionary)[level_id]
+		if record is Dictionary:
+			records[str(level_id)] = _normalize_record(record as Dictionary)
+	return records
+
+
+func _normalize_settings(settings: Variant) -> Dictionary:
+	if not (settings is Dictionary):
+		if settings != null:
+			push_warning("save: settings is not an object; using defaults")
+		return SettingsModel.defaults()
+	return SettingsModel.sanitize(settings as Dictionary)
+
+
+func _normalize_stats(stats: Variant) -> Dictionary:
+	var normalized: Dictionary = (
+		(stats as Dictionary).duplicate(true) if stats is Dictionary else {}
+	)
+	for key: String in STAT_COUNTER_KEYS:
+		normalized[key] = maxi(int(normalized.get(key, 0)), 0)
+	return normalized
 
 
 func _normalize_record(record: Dictionary) -> Dictionary:

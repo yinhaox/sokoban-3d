@@ -12,7 +12,7 @@ Run result: OBSERVED — at 1152x648 the real Settings screen shows Audio (Maste
 ## Logs
 
 - `check.log` — `python scripts/studio.py check` (exit 0; imports the project and parse-checks the 17 changed scripts).
-- `test.log` — `python scripts/studio.py test` (exit 0; 630 checks pass, 116 more than the 514 of `ui-shell`, covering save round trip, backup adoption, corrupt recovery, newer version read-only, v0 migration, unlock rules, best-record merging, level-select lock/star/best cards, setting clamping, translation coverage/fallback, immediate locale switch, the settings screen and colorblind/reduce-motion behaviour).
+- `test.log` — `python scripts/studio.py test` (exit 0; 633 checks pass, 119 more than the 514 of `ui-shell`, covering save round trip, unknown-key preservation, backup adoption, corrupt recovery, newer version read-only, v0 migration, unlock rules, best-record merging, level-select lock/star/best cards, setting clamping, translation coverage/fallback, immediate locale switch, the settings screen and colorblind/reduce-motion behaviour).
 - `run.log` — `python scripts/studio.py run --capture production/qa/evidence/save-settings-i18n/run.png` (exit 0; boots to the main menu and writes `run.png`; no script error or warning on the boot path).
 - `capture-settings.log` — `python scripts/studio.py capture --out production/qa/evidence/save-settings-i18n/settings.png -- --screen=settings --save=user://evidence-save-settings.json --fresh-save` (exit 0).
 - `capture-chinese-ui.log` — `python scripts/studio.py capture --out production/qa/evidence/save-settings-i18n/chinese-ui.png -- --screen=level-select --language=zh --save=user://evidence-save-zh.json --fresh-save` (exit 0).

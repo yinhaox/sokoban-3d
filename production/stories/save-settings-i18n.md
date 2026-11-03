@@ -111,7 +111,7 @@ difference here.
   mode is on; the palette also switches to the accessible orange/blue values.
   Tests assert the markers exist, hide, show and are attached to the right
   nodes.
-- **Checks.** `tests/run_tests.gd` now has 630 checks (116 new). The new block is
+- **Checks.** `tests/run_tests.gd` now has 633 checks (119 new). The new block is
   appended and its call is a single added line in `_init`, keeping conflict
   surface with the parallel level story small.
 - **Evidence.** Three capture runs plus one `run_command` boot on this branch; the
