@@ -1,0 +1,6 @@
+[capture] removed stale file: .\production\qa\evidence\fix-wall-artifacts-aac3cd51a4a3\after-level-010-default.png
+[capture] target: .\production\qa\evidence\fix-wall-artifacts-aac3cd51a4a3\after-level-010-default.png
+[capture] user arguments: --level=level-010
+[capture] waiting up to 60s for the PNG
+$ godot --path . -- --studio-capture=.\production\qa\evidence\fix-wall-artifacts-aac3cd51a4a3\after-level-010-default.png --level=level-010
+[capture] OK: .\production\qa\evidence\fix-wall-artifacts-aac3cd51a4a3\after-level-010-default.png (66012 bytes)

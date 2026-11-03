@@ -27,8 +27,13 @@ const ACTOR_LIFT := 0.002
 const PLATE_LIFT := 0.001
 ## CapsuleMesh needs a height of at least two radii.
 const CAPSULE_HEIGHT_EPSILON := 0.01
-## Height of the darker cap that sits on top of a wall.
-const CAP_HEIGHT := 0.02
+## Height of the darker cap that sits on top of a wall. The cap is a flat single
+## quad, so this is the lift of the top face above the wall body; kept small so a
+## faded wall's top face sits at the top of the body (issue #30).
+const CAP_HEIGHT := 0.002
+## Small overlap of two adjacent flat caps, so their shared edge never shows as a
+## hairline through a faded wall's translucent top (issue #30).
+const CAP_OVERLAP := 0.002
 ## Height of the raised cross on a crate's top face.
 const CROSS_HEIGHT := 0.02
 const CROSS_ARM_LENGTH_RATIO := 0.70
@@ -36,9 +41,17 @@ const CROSS_ARM_WIDTH_RATIO := 0.12
 const RING_INNER_RADIUS := 0.22
 const RING_OUTER_RADIUS := 0.30
 const PLATE_SIZE_RATIO := 0.90
-## Alpha a faded wall's top cap keeps, so a faded border wall still draws an
-## outline instead of disappearing (issue #9).
-const OCCLUSION_CAP_ALPHA := 0.70
+## Highest opacity any part of a faded wall may reach, so a ghosted wall never
+## competes with the floor, the crates or the player (issue #30).
+const FADE_ALPHA_MAX := 0.25
+## Alpha the faded top face keeps. A faded wall keeps its top face at this alpha,
+## so it reads as a wall instead of a hollow box with a dark hole inside.
+const FADE_CAP_ALPHA := 0.25
+## Colours of a faded wall. The top face is much paler than the side body, and
+## the side body is paler than the opaque wall, so a ghosted wall reads as a lit
+## surface over the floor instead of a dark cavity (issue #30).
+const FADE_SIDE_COLOR := Color("#8FA4BF")
+const FADE_TOP_COLOR := Color("#DCE6F4")
 ## How far a crate settles when it comes to rest on a goal plate, so the lit
 ## plate and the settle are both visible (design/core-rules.md "the crate
 ## settles").
@@ -51,8 +64,9 @@ const GRID_LINE_HEIGHT := 0.002
 const GRID_LIFT := 0.001
 const GRID_DARKEN_RATIO := 0.07
 const GRID_MAX_DARKEN_RATIO := 0.08
-## A crisp top border plus four vertical edge strips. They stay opaque while the
-## wall body fades, so a faded wall still reads as a wall instead of glass.
+## Thin top-contour bars on the outer boundary of a wall segment, so a continuous
+## wall draws one line per boundary run and never a seam between two of its own
+## cells (issue #30). They stay crisp while the wall body fades.
 const WALL_OUTLINE_WIDTH := 0.035
 const WALL_OUTLINE_HEIGHT := 0.008
 ## Dark plinth around the room. Its top sits just under the floor plane, so it
@@ -84,7 +98,7 @@ const CONTACT_SHADOW_LIFT := 0.0015
 ## the runtime setters below can still toggle the groups on a live board.
 @export var floor_grid_enabled: bool = true
 @export var wall_outline_enabled: bool = true
-@export var wall_outline_color: Color = Color("#3A4454")
+@export var wall_outline_color: Color = Color("#C6D4E7")
 @export var contact_shadow_color: Color = Color("#000000")
 @export_range(0.0, 0.4, 0.01) var contact_shadow_alpha: float = 0.18
 @export var room_base_color: Color = Color("#1A1F29")
@@ -161,6 +175,10 @@ var _grid_root: Node3D
 var _grid_nodes: Array[MeshInstance3D] = []
 var _wall_outlines_root: Node3D
 var _wall_outline_nodes: Array[MeshInstance3D] = []
+## False when a generated contour bar sits inside a wall segment instead of on its
+## boundary. `wall_outline_runs_follow_boundary()` reports it to the regression
+## test (issue #30).
+var _wall_outline_runs_valid: bool = true
 var _contact_shadows: Array[Node3D] = []
 var _floor_grid_visible: bool = true
 var _wall_outlines_visible: bool = true
@@ -250,6 +268,7 @@ func clear() -> void:
 	_grid_nodes.clear()
 	_wall_outlines_root = null
 	_wall_outline_nodes.clear()
+	_wall_outline_runs_valid = true
 	_contact_shadows.clear()
 	player_cell = Vector2i(-1, -1)
 
@@ -357,6 +376,32 @@ func wall_outline_count() -> int:
 	return _wall_outline_nodes.size()
 
 
+## True when every contour bar sits on an edge between a wall cell and a non-wall
+## cell. A bar across the inside of a wall segment reports false, which is the
+## internal seam issue #30 removed.
+func wall_outline_runs_follow_boundary() -> bool:
+	return _wall_outline_runs_valid
+
+
+## Number of wall cells whose full-cell top face exists. A faded wall keeps this
+## face, so it can never show the hollow inside of its box as a dark hole.
+func wall_top_face_count() -> int:
+	var count := 0
+	for cell: Vector2i in _wall_nodes.keys():
+		var pieces: Array = _wall_nodes[cell]
+		if pieces.size() > 1 and pieces[1] is MeshInstance3D:
+			var cap := pieces[1] as MeshInstance3D
+			if cap.mesh == null:
+				continue
+			var cap_bounds := cap.mesh.get_aabb()
+			if (
+				cap_bounds.size.x >= CELL_SIZE - CAP_OVERLAP
+				and cap_bounds.size.z >= CELL_SIZE - CAP_OVERLAP
+			):
+				count += 1
+	return count
+
+
 ## Number of soft contact shadow groups: one per crate, one per goal plate and
 ## one under the player.
 func contact_shadow_count() -> int:
@@ -460,21 +505,26 @@ func room_bounds() -> AABB:
 	)
 
 
-## Alpha of a wall's side faces while it is faded.
+## Alpha of a wall's side faces while it is faded. Clamped to `FADE_ALPHA_MAX`, so
+## no part of a faded wall is more opaque than 25% (issue #30).
 static func fade_side_alpha(alpha: float) -> float:
-	return clampf(alpha, 0.0, 1.0)
+	return clampf(alpha, 0.0, FADE_ALPHA_MAX)
 
 
-## Alpha of a faded wall's top cap: the same fade as the sides, but never below
-## `OCCLUSION_CAP_ALPHA`, so a faded border wall keeps its outline.
+## Alpha of a faded wall's top face: never above `FADE_ALPHA_MAX`, and at
+## `FADE_CAP_ALPHA` for any fade above zero, so the top face stays readable while
+## the side body ghosts away. A zero fade keeps no top face at all.
 static func fade_cap_alpha(alpha: float) -> float:
-	return clampf(maxf(alpha, OCCLUSION_CAP_ALPHA), 0.0, 1.0)
+	if alpha <= 0.0:
+		return 0.0
+	return clampf(maxf(alpha, FADE_CAP_ALPHA), 0.0, FADE_ALPHA_MAX)
 
 
 ## Fades the given wall cells to `alpha` and restores every other wall. The fade
 ## uses the per-wall transparent material variant, so a faded wall casts no
-## shadow and cannot block a target cell. The top cap keeps
-## `OCCLUSION_CAP_ALPHA`, so a faded border wall still draws its outline.
+## shadow and cannot block a target cell. The top face keeps
+## `FADE_CAP_ALPHA` in the paler `FADE_TOP_COLOR`, so a faded wall still reads as
+## a wall with a complete top instead of a hollow box (issue #30).
 func apply_wall_fade(occluded_cells: Array[Vector2i], alpha: float, seconds: float) -> void:
 	var wanted := {}
 	for cell in occluded_cells:
@@ -675,41 +725,114 @@ func _apply_floor_grid_visibility() -> void:
 		_grid_root.visible = _floor_grid_visible and floor_grid_enabled and not _reduce_motion
 
 
-## A wall's top border and four vertical edges. They are built once per wall and
-## are never faded, so a ghosted wall keeps a crisp silhouette.
-func _build_wall_outline(base: Vector3, cell: Vector2i) -> void:
-	if _wall_outlines_root == null:
-		_wall_outlines_root = Node3D.new()
-		_wall_outlines_root.name = "WallOutlines"
-		add_child(_wall_outlines_root)
-	var corner := CELL_SIZE * 0.5 - WALL_OUTLINE_WIDTH * 0.5
+## One top-contour bar per merged run of wall-region boundary edges. A continuous
+## wall segment therefore draws only its outer boundary and its top-face edge,
+## never a line between two of its own cells (issue #30). The bars are built once
+## per wall region and are never faded, so a ghosted wall keeps a crisp contour.
+func _build_wall_outlines(level: LevelDataScript) -> void:
+	_wall_outlines_root = Node3D.new()
+	_wall_outlines_root.name = "WallOutlines"
+	add_child(_wall_outlines_root)
 	var top_y := wall_height + CAP_HEIGHT + WALL_OUTLINE_HEIGHT * 0.5
-	var side_bar := Vector3(CELL_SIZE, WALL_OUTLINE_HEIGHT, WALL_OUTLINE_WIDTH)
-	var end_bar := Vector3(
-		WALL_OUTLINE_WIDTH, WALL_OUTLINE_HEIGHT, CELL_SIZE - WALL_OUTLINE_WIDTH * 2.0
-	)
-	_add_wall_outline_box(side_bar, Vector3(base.x, top_y, base.z - corner), cell, "N")
-	_add_wall_outline_box(side_bar, Vector3(base.x, top_y, base.z + corner), cell, "S")
-	_add_wall_outline_box(end_bar, Vector3(base.x - corner, top_y, base.z), cell, "W")
-	_add_wall_outline_box(end_bar, Vector3(base.x + corner, top_y, base.z), cell, "E")
-	var edge_height := wall_height + CAP_HEIGHT
-	var edge_size := Vector3(WALL_OUTLINE_WIDTH, edge_height, WALL_OUTLINE_WIDTH)
-	for x_sign in [-1.0, 1.0]:
-		for z_sign in [-1.0, 1.0]:
-			var edge_centre := Vector3(
-				base.x + x_sign * corner,
-				edge_height * 0.5,
-				base.z + z_sign * corner
-			)
-			_add_wall_outline_box(
-				edge_size, edge_centre, cell, "%.0f_%.0f" % [x_sign, z_sign]
-			)
+	for side in [-1, 1]:
+		_add_contour_runs(level, true, side, top_y)
+		_add_contour_runs(level, false, side, top_y)
 
 
-func _add_wall_outline_box(
-	size: Vector3, centre: Vector3, cell: Vector2i, suffix: String
+## Walks every row (north/south edge) or column (west/east edge) and adds one bar
+## per merged run of contiguous boundary cells. `side` is -1 for the low edge of
+## the cell and +1 for the high edge.
+func _add_contour_runs(
+	level: LevelDataScript, along_rows: bool, side: int, top_y: float
 ) -> void:
-	var node_name := "WallOutline_%d_%d_%s" % [cell.x, cell.y, suffix]
+	var line_count: int = level.rows if along_rows else level.columns
+	var step_count: int = level.columns if along_rows else level.rows
+	for line in line_count:
+		var run_start := -1
+		for step in step_count + 1:
+			var on_boundary := false
+			if step < step_count:
+				var cell: Vector2i = (
+					Vector2i(step, line) if along_rows else Vector2i(line, step)
+				)
+				if level.cell_at(cell) == LevelDataScript.Cell.WALL:
+					var neighbour: Vector2i = (
+						cell + Vector2i(0, side) if along_rows
+						else cell + Vector2i(side, 0)
+					)
+					on_boundary = not _is_wall_cell(level, neighbour)
+			if on_boundary:
+				if run_start < 0:
+					run_start = step
+			elif run_start >= 0:
+				_add_contour_bar(
+					level, along_rows, side, line, run_start, step - 1, top_y
+				)
+				run_start = -1
+
+
+## Adds the bar for one merged run and records whether the run really lies on a
+## wall/non-wall boundary, which the regression test reads back.
+func _add_contour_bar(
+	level: LevelDataScript,
+	along_rows: bool,
+	side: int,
+	line: int,
+	start: int,
+	end: int,
+	top_y: float
+) -> void:
+	var first := _contour_cell(along_rows, line, start)
+	var last := _contour_cell(along_rows, line, end)
+	var span := float(end - start + 1) * CELL_SIZE + WALL_OUTLINE_WIDTH
+	var centre: Vector3 = (first + last) * 0.5
+	centre.y = top_y
+	if along_rows:
+		centre.z += float(side) * CELL_SIZE * 0.5
+		_add_wall_outline_box(Vector3(span, WALL_OUTLINE_HEIGHT, WALL_OUTLINE_WIDTH), centre)
+	else:
+		centre.x += float(side) * CELL_SIZE * 0.5
+		_add_wall_outline_box(Vector3(WALL_OUTLINE_WIDTH, WALL_OUTLINE_HEIGHT, span), centre)
+	if not _contour_run_is_boundary(level, along_rows, side, line, start, end):
+		_wall_outline_runs_valid = false
+
+
+## Cell centre of one step of a contour run, in the builder's local space.
+func _contour_cell(along_rows: bool, line: int, step: int) -> Vector3:
+	var cell: Vector2i = Vector2i(step, line) if along_rows else Vector2i(line, step)
+	return cell_to_world(cell, _columns, _rows)
+
+
+## True when every cell of a run is a wall and its neighbour across the contoured
+## edge is not, i.e. the bar lies on the wall segment's outer boundary.
+func _contour_run_is_boundary(
+	level: LevelDataScript,
+	along_rows: bool,
+	side: int,
+	line: int,
+	start: int,
+	end: int
+) -> bool:
+	for step in range(start, end + 1):
+		var cell: Vector2i = Vector2i(step, line) if along_rows else Vector2i(line, step)
+		if level.cell_at(cell) != LevelDataScript.Cell.WALL:
+			return false
+		var neighbour: Vector2i = (
+			cell + Vector2i(0, side) if along_rows else cell + Vector2i(side, 0)
+		)
+		if _is_wall_cell(level, neighbour):
+			return false
+	return true
+
+
+func _is_wall_cell(level: LevelDataScript, cell: Vector2i) -> bool:
+	if cell.x < 0 or cell.y < 0 or cell.x >= level.columns or cell.y >= level.rows:
+		return false
+	return level.cell_at(cell) == LevelDataScript.Cell.WALL
+
+
+func _add_wall_outline_box(size: Vector3, centre: Vector3) -> void:
+	var node_name := "WallOutline_%d" % _wall_outline_nodes.size()
 	var node := _add_box_to(_wall_outlines_root, size, centre, _wall_outline_material, node_name)
 	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_wall_outline_nodes.append(node)
@@ -751,14 +874,15 @@ func _player_shadow_local_y() -> float:
 	return -_player_mesh_height() * 0.5 - ACTOR_LIFT + CONTACT_SHADOW_LIFT
 
 
+## One floor slab per cell, including the cells under walls. A wall hides its slab
+## while it is opaque; while it is faded the sand tone sits behind the translucent
+## top and sides, so the ghosted wall shows a lit floor instead of the dark room
+## base through the hollow box (issue #30).
 func _build_floor(level: LevelDataScript) -> void:
 	var size := Vector3(CELL_SIZE, floor_thickness, CELL_SIZE)
 	for row in level.rows:
 		for column in level.columns:
-			var cell := Vector2i(column, row)
-			if level.cell_at(cell) == LevelDataScript.Cell.WALL:
-				continue
-			var centre := cell_to_world(cell, _columns, _rows)
+			var centre := cell_to_world(Vector2i(column, row), _columns, _rows)
 			centre.y = -floor_thickness * 0.5
 			_add_box(size, centre, _floor_material, "Floor_%d_%d" % [column, row])
 
@@ -813,8 +937,6 @@ func _add_goal_check(cell: Vector2i, plate_top: float) -> void:
 
 
 func _build_walls(level: LevelDataScript) -> void:
-	var side_size := Vector3(CELL_SIZE, wall_height, CELL_SIZE)
-	var cap_size := Vector3(CELL_SIZE, CAP_HEIGHT, CELL_SIZE)
 	for row in level.rows:
 		for column in level.columns:
 			var cell := Vector2i(column, row)
@@ -822,20 +944,114 @@ func _build_walls(level: LevelDataScript) -> void:
 				continue
 			_wall_cells.append(cell)
 			var base := cell_to_world(cell, _columns, _rows)
-			var side_centre := base
-			side_centre.y = wall_height * 0.5
-			var cap_centre := base
-			cap_centre.y = wall_height + CAP_HEIGHT * 0.5
-			var side := _add_box(
-				side_size, side_centre, _wall_side_material, "Wall_%d_%d" % [column, row]
-			)
-			var cap := _add_box(
-				cap_size, cap_centre, _wall_top_material, "WallTop_%d_%d" % [column, row]
-			)
+			var side := _add_wall_body(level, cell, base)
+			var cap := _add_wall_cap(base, cell)
 			_wall_nodes[cell] = [side, cap]
-			_wall_fade_side[cell] = _make_transparent_material(wall_side_color)
-			_wall_fade_top[cell] = _make_transparent_material(wall_top_color)
-			_build_wall_outline(base, cell)
+			_wall_fade_side[cell] = _make_transparent_material(FADE_SIDE_COLOR)
+			_wall_fade_top[cell] = _make_transparent_material(FADE_TOP_COLOR)
+	_build_wall_outlines(level)
+
+
+## A flat, single-quad top cap. A thin box cap drew its own side face at every
+## shared cell edge, which showed through a faded wall's translucent top as a
+## seam; a flat quad has no side faces (issue #30). The small overlap closes the
+## hairline between two adjacent caps.
+func _add_wall_cap(base: Vector3, cell: Vector2i) -> MeshInstance3D:
+	var half := CELL_SIZE * 0.5 + CAP_OVERLAP * 0.5
+	var y := wall_height + CAP_HEIGHT
+	var vertices := PackedVector3Array([
+		Vector3(-half, y, half),
+		Vector3(half, y, half),
+		Vector3(half, y, -half),
+		Vector3(-half, y, -half),
+	])
+	var normals := PackedVector3Array()
+	for _index in 4:
+		normals.append(Vector3.UP)
+	var indices := PackedInt32Array([0, 2, 1, 0, 3, 2])
+	var instance := MeshInstance3D.new()
+	instance.name = "WallTop_%d_%d" % [cell.x, cell.y]
+	instance.mesh = _triangle_mesh(vertices, normals, indices)
+	instance.material_override = _wall_top_material
+	instance.position = Vector3(base.x, 0.0, base.z)
+	add_child(instance)
+	return instance
+
+
+## A wall body that carries only the side faces exposed to a non-wall neighbour.
+## Faces shared by two wall cells are omitted, so a faded run never draws a seam
+## line through its translucent body (issue #30). The thin top cap closes the top.
+func _add_wall_body(level: LevelDataScript, cell: Vector2i, base: Vector3) -> MeshInstance3D:
+	var instance := MeshInstance3D.new()
+	instance.name = "Wall_%d_%d" % [cell.x, cell.y]
+	instance.mesh = _wall_body_mesh(level, cell)
+	instance.material_override = _wall_side_material
+	instance.position = Vector3(base.x, wall_height * 0.5, base.z)
+	add_child(instance)
+	return instance
+
+
+## Generated mesh of a wall body: one quad per exposed side face, no shared faces
+## and no top or bottom face (the cap covers the top).
+func _wall_body_mesh(level: LevelDataScript, cell: Vector2i) -> ArrayMesh:
+	var vertices := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var indices := PackedInt32Array()
+	var half := CELL_SIZE * 0.5
+	var bottom := -wall_height * 0.5
+	# [neighbour offset, bottom-left corner, bottom-right corner, outward normal].
+	var faces: Array = [
+		[Vector2i(1, 0), Vector3(half, bottom, half), Vector3(half, bottom, -half), Vector3.RIGHT],
+		[Vector2i(-1, 0), Vector3(-half, bottom, -half), Vector3(-half, bottom, half), Vector3.LEFT],
+		[Vector2i(0, 1), Vector3(-half, bottom, half), Vector3(half, bottom, half), Vector3.BACK],
+		[Vector2i(0, -1), Vector3(half, bottom, -half), Vector3(-half, bottom, -half), Vector3.FORWARD],
+	]
+	for face: Array in faces:
+		var offset: Vector2i = face[0]
+		if _is_wall_cell(level, cell + offset):
+			continue
+		var bottom_left: Vector3 = face[1]
+		var bottom_right: Vector3 = face[2]
+		var normal: Vector3 = face[3]
+		_add_wall_face(vertices, normals, indices, bottom_left, bottom_right, normal)
+	return _triangle_mesh(vertices, normals, indices)
+
+
+## Builds one generated triangle mesh from the given arrays, or an empty mesh when
+## there is no face.
+func _triangle_mesh(
+	vertices: PackedVector3Array, normals: PackedVector3Array, indices: PackedInt32Array
+) -> ArrayMesh:
+	var mesh := ArrayMesh.new()
+	if vertices.is_empty():
+		return mesh
+	var arrays: Array = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_INDEX] = indices
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
+
+
+## Appends one vertical wall face. `bottom_left` and `bottom_right` are the two
+## bottom corners in the order that makes the face visible from outside the wall.
+func _add_wall_face(
+	vertices: PackedVector3Array,
+	normals: PackedVector3Array,
+	indices: PackedInt32Array,
+	bottom_left: Vector3,
+	bottom_right: Vector3,
+	normal: Vector3
+) -> void:
+	var top_left := bottom_left + Vector3(0.0, wall_height, 0.0)
+	var top_right := bottom_right + Vector3(0.0, wall_height, 0.0)
+	var start := vertices.size()
+	for vertex in [bottom_left, bottom_right, top_right, top_left]:
+		vertices.append(vertex)
+		normals.append(normal)
+	for index in [start, start + 1, start + 2, start, start + 2, start + 3]:
+		indices.append(index)
 
 
 func _build_crates(level: LevelDataScript) -> void:

@@ -1,0 +1,45 @@
+[check] project: .
+$ godot --headless --path . --import
+--- output (last 40 line(s)) ---
+[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | Started 正在注册全局类…… (31 steps)[39m[0m
+[   0% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[   3% ] [90m[1mupdate_scripts_classes[22m | AudioDirector[39m[0m
+[   6% ] [90m[1mupdate_scripts_classes[22m | BoardBuilder[39m[0m
+[   9% ] [90m[1mupdate_scripts_classes[22m | CameraRig[39m[0m
+[  12% ] [90m[1mupdate_scripts_classes[22m | GameplayController[39m[0m
+[  15% ] [90m[1mupdate_scripts_classes[22m | LevelSequence[39m[0m
+[  18% ] [90m[1mupdate_scripts_classes[22m | InputActions[39m[0m
+[  21% ] [90m[1mupdate_scripts_classes[22m | Deadlock[39m[0m
+[  25% ] [90m[1mupdate_scripts_classes[22m | GameSession[39m[0m
+[  28% ] [90m[1mupdate_scripts_classes[22m | LevelData[39m[0m
+[  31% ] [90m[1mupdate_scripts_classes[22m | LevelProgress[39m[0m
+[  34% ] [90m[1mupdate_scripts_classes[22m | Localization[39m[0m
+[  37% ] [90m[1mupdate_scripts_classes[22m | MoveRecord[39m[0m
+[  40% ] [90m[1mupdate_scripts_classes[22m | SaveStore[39m[0m
+[  43% ] [90m[1mupdate_scripts_classes[22m | SettingsModel[39m[0m
+[  46% ] [90m[1mupdate_scripts_classes[22m | StarRating[39m[0m
+[  50% ] [90m[1mupdate_scripts_classes[22m | ConfirmModal[39m[0m
+[  53% ] [90m[1mupdate_scripts_classes[22m | Hud[39m[0m
+[  56% ] [90m[1mupdate_scripts_classes[22m | InfoPanel[39m[0m
+[  59% ] [90m[1mupdate_scripts_classes[22m | LevelSelect[39m[0m
+[  62% ] [90m[1mupdate_scripts_classes[22m | MainMenu[39m[0m
+[  65% ] [90m[1mupdate_scripts_classes[22m | PauseMenu[39m[0m
+[  68% ] [90m[1mupdate_scripts_classes[22m | ScreenRouter[39m[0m
+[  71% ] [90m[1mupdate_scripts_classes[22m | SettingsScreen[39m[0m
+[  75% ] [90m[1mupdate_scripts_classes[22m | StarRow[39m[0m
+[  78% ] [90m[1mupdate_scripts_classes[22m | UiFocus[39m[0m
+[  81% ] [90m[1mupdate_scripts_classes[22m | UiFormat[39m[0m
+[  84% ] [90m[1mupdate_scripts_classes[22m | UiTheme[39m[0m
+[  87% ] [90m[1mupdate_scripts_classes[22m | VictoryPanel[39m[0m
+[  90% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[  93% ] [90m[1mupdate_scripts_classes[22m | [39m[0m
+[92m[ DONE ][39m [1mupdate_scripts_classes[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started 正在加载编辑器 (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | 正在加载编辑器布局……[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | 正在加载停靠面板……[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+[check] import OK
+[check] no changed .gd files to parse-check
