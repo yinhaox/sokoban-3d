@@ -1,0 +1,5 @@
+[capture] target: .\production\qa\evidence\boot-aids\play-level-010.png
+[capture] user arguments: --level=010
+[capture] waiting up to 60s for the PNG
+$ godot --path . -- --studio-capture=.\production\qa\evidence\boot-aids\play-level-010.png --level=010
+[capture] OK: .\production\qa\evidence\boot-aids\play-level-010.png (57719 bytes)
