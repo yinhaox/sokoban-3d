@@ -16,7 +16,7 @@ This page lands when: a reviewer can open any system page, see which pillar it s
 
 The player is a puzzle player, 12 years and older, on desktop or web, with five to thirty minutes to spend. They open the game, see a calm isometric wooden room, and are pushing their first crate within ten seconds. Nothing in the room is decorative: walls, floor, crates and goal plates are read at a glance in 3D.
 
-**Pillars.** Four promises, each testable in play. These are proposals for `design/vision.md`, which still carries the template text; the creative director owns the final wording.
+**Pillars.** Four promises, each testable in play. The canonical wording lives in [vision.md](vision.md); this table mirrors it, and the creative director owns later changes.
 
 | Pillar | The player should be able to say | How a design is tested against it |
 |---|---|---|
@@ -88,19 +88,18 @@ _来源约定：issue #1、project.godot 或本页引用的既有页面已经固
 - **A pillar and a feature conflict.** The pillar wins and the feature is cut or deferred; the decision is recorded in this page's Open questions until the creative director moves it into `design/vision.md`.
 - **The commercial bar cannot be met for a platform.** The platform drops from 1.0 and the release page says so; the bar is not lowered for the platforms that remain.
 - **A page grows past one sitting.** It splits by system, not by paragraph, and both halves are indexed; a page is never left as a half-updated reference.
-- **`design/vision.md` is still template text.** The pillars above are the working reference; a system page cites the pillar name and this page, and the mismatch is listed in Open questions rather than silently resolved.
+- **This page and `design/vision.md` disagree.** The vision page wins; this table is updated in the same change, and a system page cites the pillar name from `design/vision.md`.
 
 ## Open questions
 
-1. **Pillar wording and vision ownership (creative director).** P1-P4 above are proposals derived from issue #1. The creative director should adopt or rewrite them in `design/vision.md`, which this design-doc ticket may not edit. Decision needed: approve the four pillars as written, or supply the canonical wording.
-2. **Working title (creative director / producer).** All pages use "Sokoban 3D" and the project is still named "Game Studio" in `project.godot`. Decision needed: the shipping title and whether it is baked into `project.godot` before or after localization keys are frozen.
-3. **Extra systems beyond the 20-level scope (producer).** No level editor, daily puzzle, hints or music are planned for 1.0. Decision needed: confirm the cut list, since each one changes the story plan and the commercial bar.
-4. **Web export as a shipped platform (producer / release manager).** The issue names Windows, Linux and Web. Web brings IndexedDB save limits, a user-gesture requirement for audio and a second QA pass. Decision needed: is Web a 1.0 platform or a post-1.0 target?
-5. **PEGI/ESRB confirmation (release manager).** The target rating is a proposal until the storefront questionnaire is filled in. Decision needed: who submits the rating and which storefronts are in scope.
+1. **Working title (creative director / producer).** All pages use "Sokoban 3D" and the project is still named "Game Studio" in `project.godot`. Decision needed: the shipping title and whether it is baked into `project.godot` before or after localization keys are frozen.
+2. **Extra systems beyond the 20-level scope (producer).** No level editor, daily puzzle, hints or music are planned for 1.0. Decision needed: confirm the cut list, since each one changes the story plan and the commercial bar.
+3. **Web export as a shipped platform (producer / release manager).** The issue names Windows, Linux and Web. Web brings IndexedDB save limits, a user-gesture requirement for audio and a second QA pass. Decision needed: is Web a 1.0 platform or a post-1.0 target?
+4. **PEGI/ESRB confirmation (release manager).** The target rating is a proposal until the storefront questionnaire is filled in. Decision needed: who submits the rating and which storefronts are in scope.
 
 ## Links
 
 - Related systems: [systems-index.md](systems-index.md), all pages under `design/`
-- Vision: [vision.md](vision.md) (still template text; see Open question 1)
+- Vision: [vision.md](vision.md)
 - Source request: issue #1, `Type: design - 3D Sokoban design for a commercial-ready release`
 - Stories: `production/stories/` (none yet; the producer derives them from these pages)
