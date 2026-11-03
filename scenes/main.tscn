@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://src/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://src/game/board_builder.gd" id="2_board"]
@@ -11,6 +11,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="9_pause"]
 [ext_resource type="PackedScene" path="res://scenes/ui/confirm_modal.tscn" id="10_confirm"]
 [ext_resource type="PackedScene" path="res://scenes/ui/info_panel.tscn" id="11_info"]
+[ext_resource type="PackedScene" path="res://scenes/ui/settings_screen.tscn" id="12_settings"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -61,6 +62,6 @@ script = ExtResource("4_gameplay")
 
 [node name="ConfirmModal" parent="." instance=ExtResource("10_confirm")]
 
-[node name="SettingsPanel" parent="." instance=ExtResource("11_info")]
+[node name="SettingsPanel" parent="." instance=ExtResource("12_settings")]
 
 [node name="CreditsPanel" parent="." instance=ExtResource("11_info")]

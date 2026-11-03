@@ -61,6 +61,20 @@ const CRATE_GOAL_SINK := 0.03
 @export var goal_filled_color: Color = Color("#7FD1A8")
 @export var player_color: Color = Color("#E2574C")
 
+@export_group("Colorblind palette")
+## Palette swapped in when a colorblind mode is on, from design/accessibility.md
+## "Palettes". The shape markers below are always built and become visible with
+## the mode, so the mode never removes shape information.
+@export var colorblind_crate_color: Color = Color("#E69F00")
+@export var colorblind_crate_on_goal_color: Color = Color("#F0C060")
+@export var colorblind_goal_color: Color = Color("#56B4E9")
+@export var colorblind_player_color: Color = Color("#0072B2")
+@export var colorblind_marker_color: Color = Color("#111111")
+@export var colorblind_marker_size: float = 0.10
+@export var colorblind_crate_mark_height: float = 0.26
+@export var colorblind_goal_mark_width: float = 0.20
+@export var colorblind_player_nub_depth: float = 0.20
+
 ## Cell of the player piece, set by `build()`.
 var player_cell: Vector2i = Vector2i(-1, -1)
 
@@ -70,6 +84,8 @@ var _wall_cells: Array[Vector2i] = []
 var _crate_cells: Array[Vector2i] = []
 var _crate_nodes: Array[MeshInstance3D] = []
 var _player_node: MeshInstance3D
+var _colorblind_mode: bool = false
+var _colorblind_markers: Array[MeshInstance3D] = []
 ## Goal cell -> plate node, and the plate's current filled state.
 var _goal_cells: Dictionary = {}
 var _goal_plates: Dictionary = {}
@@ -85,6 +101,7 @@ var _goal_filled_material: StandardMaterial3D
 var _goal_ring_material: StandardMaterial3D
 var _marker_material: StandardMaterial3D
 var _player_material: StandardMaterial3D
+var _colorblind_mark_material: StandardMaterial3D
 
 ## Wall bookkeeping for the occlusion fade: cell -> [side, cap] instances and
 ## the per-wall transparent material variants.
@@ -163,6 +180,7 @@ func clear() -> void:
 	_goal_plates.clear()
 	_goal_filled.clear()
 	_player_node = null
+	_colorblind_markers.clear()
 	_wall_nodes.clear()
 	_wall_fade_side.clear()
 	_wall_fade_top.clear()
@@ -192,6 +210,36 @@ func crate_node(index: int) -> MeshInstance3D:
 	if index < 0 or index >= _crate_nodes.size():
 		return null
 	return _crate_nodes[index]
+
+
+## Turns the colorblind shape markers and palette on or off. The markers exist on
+## every board and only their visibility changes, so no rebuild is needed when
+## the setting is changed from the pause menu.
+func set_colorblind_mode(enabled: bool) -> void:
+	_colorblind_mode = enabled
+	_apply_palette()
+	for marker: MeshInstance3D in _colorblind_markers:
+		marker.visible = enabled
+
+
+func is_colorblind_mode() -> bool:
+	return _colorblind_mode
+
+
+## Number of shape markers the board carries: one per goal, one per crate and one
+## on the player.
+func colorblind_marker_count() -> int:
+	return _colorblind_markers.size()
+
+
+## True when the board has markers and every one of them is visible.
+func colorblind_markers_visible() -> bool:
+	if _colorblind_markers.is_empty():
+		return false
+	for marker: MeshInstance3D in _colorblind_markers:
+		if not marker.visible:
+			return false
+	return true
 
 
 ## World position of the player piece for a cell, matching `_build_player()`.
@@ -231,7 +279,7 @@ func set_crate_on_goal(index: int, on_goal: bool) -> void:
 		return
 	crate.material_override = _crate_on_goal_material if on_goal else _crate_material
 	for child in crate.get_children():
-		if child is MeshInstance3D:
+		if child is MeshInstance3D and not str((child as Node).name).begins_with("Cb"):
 			(child as MeshInstance3D).material_override = (
 				_crate_material if on_goal else _marker_material
 			)
@@ -389,13 +437,40 @@ func _create_materials() -> void:
 	_floor_material = _make_material(floor_color)
 	_wall_side_material = _make_material(wall_side_color)
 	_wall_top_material = _make_material(wall_top_color)
-	_crate_material = _make_material(crate_color)
-	_crate_on_goal_material = _make_material(crate_on_goal_color)
+	_crate_material = _make_material(_effective_color(crate_color, colorblind_crate_color))
+	_crate_on_goal_material = _make_material(
+		_effective_color(crate_on_goal_color, colorblind_crate_on_goal_color)
+	)
 	_goal_empty_material = _make_material(goal_empty_color)
-	_goal_filled_material = _make_emissive_material(goal_filled_color)
-	_goal_ring_material = _make_material(goal_filled_color)
-	_marker_material = _make_material(crate_on_goal_color)
-	_player_material = _make_material(player_color)
+	_goal_filled_material = _make_emissive_material(
+		_effective_color(goal_filled_color, colorblind_goal_color)
+	)
+	_goal_ring_material = _make_material(_effective_color(goal_filled_color, colorblind_goal_color))
+	_marker_material = _make_material(_effective_color(crate_on_goal_color, colorblind_marker_color))
+	_player_material = _make_material(_effective_color(player_color, colorblind_player_color))
+	_colorblind_mark_material = _make_material(colorblind_marker_color)
+
+
+## The palette entry for the current colour mode.
+func _effective_color(normal: Color, colorblind: Color) -> Color:
+	return colorblind if _colorblind_mode else normal
+
+
+## Re-colours the materials already on the board when the mode is changed while a
+## level is open, and does nothing before the first `build()`.
+func _apply_palette() -> void:
+	if _crate_material == null:
+		return
+	_crate_material.albedo_color = _effective_color(crate_color, colorblind_crate_color)
+	_crate_on_goal_material.albedo_color = _effective_color(
+		crate_on_goal_color, colorblind_crate_on_goal_color
+	)
+	var goal_color := _effective_color(goal_filled_color, colorblind_goal_color)
+	_goal_filled_material.albedo_color = goal_color
+	_goal_filled_material.emission = goal_color
+	_goal_ring_material.albedo_color = goal_color
+	_marker_material.albedo_color = _effective_color(crate_on_goal_color, colorblind_marker_color)
+	_player_material.albedo_color = _effective_color(player_color, colorblind_player_color)
 
 
 func _make_material(color: Color) -> StandardMaterial3D:
@@ -451,6 +526,29 @@ func _build_goals(level: LevelDataScript) -> void:
 		var ring_centre := cell_to_world(cell, _columns, _rows)
 		ring_centre.y = plate_top + ring_radius
 		_add_torus(ring_centre, _goal_ring_material, "GoalRing_%d_%d" % [cell.x, cell.y])
+		_add_goal_check(cell, plate_top)
+
+
+## Two angled bars that read as a check mark on an empty plate, so a goal is
+## identifiable by shape as well as colour in colorblind mode.
+func _add_goal_check(cell: Vector2i, plate_top: float) -> void:
+	var arm_size := Vector3(
+		colorblind_goal_mark_width * 0.55, 0.012, colorblind_marker_size
+	)
+	for arm_index in 2:
+		var centre := cell_to_world(cell, _columns, _rows)
+		centre.y = plate_top + colorblind_marker_size * 0.5
+		centre.x += 0.03 * float(1 - arm_index)
+		centre.z += 0.04 * float(arm_index) - 0.02
+		var arm := _add_box(
+			arm_size,
+			centre,
+			_colorblind_mark_material,
+			"CbGoalMark_%d_%d_%d" % [cell.x, cell.y, arm_index]
+		)
+		arm.rotation.y = PI * 0.25 * (1.0 if arm_index == 0 else -1.0)
+		arm.visible = _colorblind_mode
+		_colorblind_markers.append(arm)
 
 
 func _build_walls(level: LevelDataScript) -> void:
@@ -493,6 +591,21 @@ func _build_crates(level: LevelDataScript) -> void:
 		_crate_nodes.append(crate)
 		var marker := _crate_material if on_goal else _marker_material
 		_add_crate_cross(crate, marker)
+		_add_crate_finial(crate, index)
+
+
+## A raised post above the crate cross, visible only in colorblind mode, so the
+## crate silhouette differs from a bare block at a glance.
+func _add_crate_finial(crate: MeshInstance3D, index: int) -> void:
+	var size := Vector3(colorblind_marker_size, colorblind_crate_mark_height, colorblind_marker_size)
+	var centre := Vector3(
+		0.0, crate_size * 0.5 + CROSS_HEIGHT + colorblind_crate_mark_height * 0.5, 0.0
+	)
+	var finial := _add_box_child(
+		crate, size, centre, _colorblind_mark_material, "CbCrateMark_%d" % index
+	)
+	finial.visible = _colorblind_mode
+	_colorblind_markers.append(finial)
 
 
 func _add_crate_cross(crate: MeshInstance3D, material: StandardMaterial3D) -> void:
@@ -520,6 +633,15 @@ func _build_player(level: LevelDataScript) -> void:
 	instance.position = player_world_position(player_cell)
 	add_child(instance)
 	_player_node = instance
+	var nub := _add_box_child(
+		instance,
+		Vector3(colorblind_marker_size, colorblind_marker_size, colorblind_player_nub_depth),
+		Vector3(0.0, 0.0, player_radius + colorblind_player_nub_depth * 0.5),
+		_colorblind_mark_material,
+		"CbPlayerMark"
+	)
+	nub.visible = _colorblind_mode
+	_colorblind_markers.append(nub)
 
 
 ## CapsuleMesh needs a height of at least two radii.

@@ -33,6 +33,10 @@ const HudClass = preload("res://src/ui/hud.gd")
 const PauseMenuClass = preload("res://src/ui/pause_menu.gd")
 const ConfirmModalClass = preload("res://src/ui/confirm_modal.gd")
 const StarRowClass = preload("res://src/ui/star_row.gd")
+const SaveStoreClass = preload("res://src/logic/save_store.gd")
+const SettingsModelClass = preload("res://src/logic/settings_model.gd")
+const LocalizationClass = preload("res://src/logic/localization.gd")
+const SettingsScreenClass = preload("res://src/ui/settings_screen.gd")
 
 const VICTORY_SCENE_PATH := "res://scenes/ui/victory_panel.tscn"
 const HUD_SCENE_PATH := "res://scenes/ui/hud.tscn"
@@ -40,6 +44,7 @@ const MAIN_MENU_SCENE_PATH := "res://scenes/ui/main_menu.tscn"
 const LEVEL_SELECT_SCENE_PATH := "res://scenes/ui/level_select.tscn"
 const PAUSE_MENU_SCENE_PATH := "res://scenes/ui/pause_menu.tscn"
 const CONFIRM_SCENE_PATH := "res://scenes/ui/confirm_modal.tscn"
+const SETTINGS_SCENE_PATH := "res://scenes/ui/settings_screen.tscn"
 
 const LEVEL_FILES := [
 	"level-001",
@@ -178,6 +183,7 @@ var _ui_signal_flags: Dictionary = {}
 
 
 func _init() -> void:
+	LocalizationClass.install()
 	_test_main_scene()
 	_test_project_settings()
 	_test_level_data_valid()
@@ -218,6 +224,7 @@ func _init() -> void:
 	_test_confirm_modal()
 	_test_star_row()
 	_test_gameplay_pause_blocks_input()
+	_test_save_settings_i18n()
 
 	if _failed == 0:
 		print("PASS: %d checks passed" % _passed)
@@ -1844,3 +1851,465 @@ func _on_test_confirmed() -> void:
 
 func _on_test_cancelled() -> void:
 	_ui_signal_flags["cancelled"] = true
+
+
+func _test_save_settings_i18n() -> void:
+	_test_save_round_trip()
+	_test_save_corrupt_recovery()
+	_test_save_newer_version()
+	_test_save_migration()
+	_test_save_unlock_and_records()
+	_test_settings_clamping()
+	_test_localization_tables()
+	_test_level_select_progress_cards()
+	_test_settings_screen()
+	_test_colorblind_and_reduce_motion()
+
+
+func _test_save_round_trip() -> void:
+	var path := "user://test-save-roundtrip.json"
+	_clean_save_test_files(path)
+	var store := SaveStoreClass.new()
+	store.configure(path)
+	var summary := store.load_profile()
+	_check(summary["status"] == SaveStoreClass.STATUS_NEW, "a missing profile loads as a new profile")
+	_check(int(store.data().get("version", 0)) == SaveStoreClass.CURRENT_VERSION, "a new profile carries the current version")
+	_check(store.ensure_unlocked("level-001"), "the store unlocks the first level")
+	_check(store.is_unlocked("level-001"), "the first level reads as unlocked")
+	_check(not store.is_unlocked("level-002"), "the second level starts locked")
+	_check(is_equal_approx(float(store.set_setting("master_volume", 0.4)), 0.4), "set_setting returns the stored value")
+	_check(store.save_now(), "the store writes its profile atomically")
+	_check(FileAccess.file_exists(path), "the profile exists after a write")
+	_check(not FileAccess.file_exists(path + ".tmp"), "an atomic write leaves no temp file behind")
+	_check(not FileAccess.file_exists(path + ".bak"), "the first write creates no backup to rotate")
+	store.set_setting("sfx_volume", 0.7)
+	_check(store.save_now(), "a second write succeeds")
+	_check(FileAccess.file_exists(path + ".bak"), "a second write keeps the previous profile as .bak")
+	var reloaded := SaveStoreClass.new()
+	reloaded.configure(path)
+	var second := reloaded.load_profile()
+	_check(second["status"] == SaveStoreClass.STATUS_OK, "an intact profile reloads as OK")
+	_check(is_equal_approx(float(reloaded.settings().get("master_volume", 0.0)), 0.4), "the settings round-trip through the file")
+	_check(is_equal_approx(float(reloaded.settings().get("sfx_volume", 0.0)), 0.7), "a later setting change round-trips too")
+	_check(reloaded.is_unlocked("level-001"), "the unlock round-trips through the file")
+	DirAccess.remove_absolute(path)
+	var adopted := SaveStoreClass.new()
+	adopted.configure(path)
+	var third := adopted.load_profile()
+	_check(third["status"] == SaveStoreClass.STATUS_RECOVERED, "a missing profile adopts the readable backup")
+	_check(adopted.is_unlocked("level-001"), "the adopted backup keeps the unlock")
+	store.free()
+	reloaded.free()
+	adopted.free()
+	_clean_save_test_files(path)
+	var future_path := "user://test-save-unknown.json"
+	_clean_save_test_files(future_path)
+	_write_test_text(
+		future_path,
+		JSON.stringify(
+			{
+				"version": 1,
+				"unlocked": ["level-001"],
+				"levels": {},
+				"settings": {},
+				"stats": {"total_moves": 7},
+				"future_field": {"kept": true},
+			}
+		)
+	)
+	var future_store := SaveStoreClass.new()
+	future_store.configure(future_path)
+	future_store.load_profile()
+	_check(future_store.data().has("future_field"), "an unknown top-level key is preserved")
+	_check(
+		int((future_store.data().get("stats", {}) as Dictionary).get("total_moves", 0)) == 7,
+		"lifetime stats are preserved"
+	)
+	future_store.save_now()
+	var rewritten: Variant = JSON.parse_string(_read_test_text(future_path))
+	_check(
+		rewritten is Dictionary
+		and ((rewritten as Dictionary).get("future_field", {}) as Dictionary).get("kept", false),
+		"the unknown key is written back after a round trip"
+	)
+	future_store.free()
+	_clean_save_test_files(future_path)
+
+
+func _test_save_corrupt_recovery() -> void:
+	var path := "user://test-save-corrupt.json"
+	_clean_save_test_files(path)
+	_write_test_text(path, "{ this is not json")
+	var store := SaveStoreClass.new()
+	store.configure(path)
+	var summary := store.load_profile()
+	_check(summary["status"] == SaveStoreClass.STATUS_CORRUPT, "a damaged profile reports the corrupt status")
+	_check(str(summary["notice_key"]) == SaveStoreClass.NOTICE_CORRUPT, "a damaged profile asks for the corrupt notice")
+	_check(store.last_backup_path != "" and FileAccess.file_exists(store.last_backup_path), "a damaged profile is backed up")
+	_check(
+		store.last_backup_path.get_file().begins_with("test-save-corrupt.corrupt-"),
+		"the backup name follows save.corrupt-<ts>.json"
+	)
+	_check(_read_test_text(store.last_backup_path) == "{ this is not json", "the backup keeps the damaged bytes")
+	_check(int(store.data().get("version", 0)) == SaveStoreClass.CURRENT_VERSION, "a damaged profile falls back to defaults")
+	_check(is_equal_approx(float(store.settings().get("master_volume", 0.0)), 0.8), "the fallback settings are the defaults")
+	var reloaded := SaveStoreClass.new()
+	reloaded.configure(path)
+	_check(reloaded.load_profile()["status"] == SaveStoreClass.STATUS_OK, "the fresh profile left after corruption loads cleanly")
+	store.free()
+	reloaded.free()
+	_clean_save_test_files(path)
+
+
+func _test_save_newer_version() -> void:
+	var path := "user://test-save-newer.json"
+	_clean_save_test_files(path)
+	var newer := {
+		"version": SaveStoreClass.CURRENT_VERSION + 1,
+		"unlocked": ["level-002"],
+		"levels": {},
+		"settings": {"master_volume": 0.1},
+	}
+	_write_test_text(path, JSON.stringify(newer))
+	var store := SaveStoreClass.new()
+	store.configure(path)
+	var summary := store.load_profile()
+	_check(summary["status"] == SaveStoreClass.STATUS_NEWER, "a newer profile reports the newer status")
+	_check(bool(summary["read_only"]), "a newer profile makes the store read-only")
+	_check(str(summary["notice_key"]) == SaveStoreClass.NOTICE_NEWER, "a newer profile asks for the newer notice")
+	_check(store.last_backup_path != "" and FileAccess.file_exists(store.last_backup_path), "a newer profile is copied aside")
+	_check(not store.is_unlocked("level-002"), "a newer profile's data is not adopted into the fresh one")
+	var before := _read_test_text(path)
+	_check(not store.save_now(), "a read-only store refuses to write")
+	_check(_read_test_text(path) == before, "a refused write leaves the newer file untouched")
+	store.free()
+	_clean_save_test_files(path)
+
+
+func _test_save_migration() -> void:
+	var path := "user://test-save-migration.json"
+	_clean_save_test_files(path)
+	var legacy := {
+		"version": 0,
+		"completed": ["level-001"],
+		"settings": {"master_volume": 0.5, "sfx_volume": 0.25},
+	}
+	_write_test_text(path, JSON.stringify(legacy))
+	var store := SaveStoreClass.new()
+	store.configure(path)
+	var summary := store.load_profile()
+	_check(summary["status"] == SaveStoreClass.STATUS_MIGRATED, "an older profile reports the migrated status")
+	_check(int(store.data().get("version", 0)) == SaveStoreClass.CURRENT_VERSION, "migration reaches the current version")
+	_check(is_equal_approx(float(store.settings().get("master_volume", 0.0)), 0.5), "migration keeps a valid stored setting")
+	_check(is_equal_approx(float(store.settings().get("sfx_volume", 0.0)), 0.25), "migration keeps a second stored setting")
+	_check(is_equal_approx(float(store.settings().get("camera_sensitivity", 0.0)), 1.0), "migration fills a missing setting with its default")
+	var written: Variant = JSON.parse_string(_read_test_text(path))
+	_check(written is Dictionary and int((written as Dictionary).get("version", 0)) == SaveStoreClass.CURRENT_VERSION, "the migrated profile is written back")
+	store.free()
+	_clean_save_test_files(path)
+
+
+func _test_save_unlock_and_records() -> void:
+	var path := "user://test-save-records.json"
+	_clean_save_test_files(path)
+	var store := SaveStoreClass.new()
+	store.configure(path)
+	store.load_profile()
+	store.ensure_unlocked("level-001")
+	var ids: Array[String] = ["level-001", "level-002", "level-003"]
+	_check(store.next_unfinished(ids) == "level-001", "Play starts on the first unlocked level")
+	var first := store.complete_level(
+		"level-001", ids, {"moves": 10, "pushes": 4, "elapsed_ms": 20000, "stars": 2}
+	)
+	_check(bool(first.get("new_best", false)), "the first completion sets a best record")
+	_check(str(first.get("unlocked", "")) == "level-002", "completing a level unlocks the next one")
+	_check(store.is_unlocked("level-002"), "the next level is unlocked")
+	_check(not store.is_unlocked("level-003"), "the level after that stays locked")
+	_check(store.next_unfinished(ids) == "level-002", "Play moves to the next unfinished level")
+	var record := store.record_for("level-001")
+	_check(bool(record.get("completed", false)), "a completed level records completion")
+	_check(int(record.get("stars", 0)) == 2 and int(record.get("best_moves", 0)) == 10, "the record keeps stars and best moves")
+	_check(int(record.get("best_pushes", 0)) == 4 and int(record.get("best_time_ms", 0)) == 20000, "the record keeps the pushes and time of the best run")
+	store.complete_level(
+		"level-001", ids, {"moves": 12, "pushes": 6, "elapsed_ms": 30000, "stars": 1}
+	)
+	record = store.record_for("level-001")
+	_check(int(record.get("best_moves", 0)) == 10 and int(record.get("best_pushes", 0)) == 4, "a worse run does not replace the best moves")
+	_check(int(record.get("stars", 0)) == 2, "a lower star count does not replace the best stars")
+	store.complete_level(
+		"level-001", ids, {"moves": 8, "pushes": 3, "elapsed_ms": 15000, "stars": 3}
+	)
+	record = store.record_for("level-001")
+	_check(int(record.get("best_moves", 0)) == 8 and int(record.get("best_time_ms", 0)) == 15000, "a better run replaces the best record")
+	_check(int(record.get("stars", 0)) == 3, "a higher star count replaces the best stars")
+	store.complete_level(
+		"level-001", ids, {"moves": 8, "pushes": 3, "elapsed_ms": 12000, "stars": 2}
+	)
+	_check(int(store.record_for("level-001").get("best_time_ms", 0)) == 12000, "an equal-move faster run improves the time")
+	_check(int(store.record_for("level-001").get("stars", 0)) == 3, "an equal-move run keeps the higher star count")
+	store.complete_level("level-002", ids, {"moves": 14, "pushes": 6, "elapsed_ms": 1000, "stars": 3})
+	_check(store.is_unlocked("level-003"), "completing the second level unlocks the third")
+	store.complete_level("level-003", ids, {"moves": 20, "pushes": 8, "elapsed_ms": 1000, "stars": 3})
+	_check(store.next_unfinished(ids) == "level-003", "Play opens the last level when every level is complete")
+	_check(store.complete_level("", ids, {}).is_empty(), "a completion without a level id is ignored")
+	store.save_now()
+	var reloaded := SaveStoreClass.new()
+	reloaded.configure(path)
+	reloaded.load_profile()
+	_check(int(reloaded.record_for("level-001").get("best_moves", 0)) == 8, "the merged record round-trips through the file")
+	_check(reloaded.is_unlocked("level-003"), "the unlock chain round-trips through the file")
+	store.free()
+	reloaded.free()
+	_clean_save_test_files(path)
+
+
+func _test_settings_clamping() -> void:
+	_check(is_equal_approx(float(SettingsModelClass.clamp_value("master_volume", 5.0)), 1.0), "a volume above the range clamps to 1.0")
+	_check(is_equal_approx(float(SettingsModelClass.clamp_value("master_volume", -3.0)), 0.0), "a volume below the range clamps to 0.0")
+	_check(is_equal_approx(float(SettingsModelClass.clamp_value("camera_sensitivity", 9.0)), 2.0), "camera sensitivity clamps at its maximum")
+	_check(is_equal_approx(float(SettingsModelClass.clamp_value("camera_sensitivity", 0.1)), 0.5), "camera sensitivity clamps at its minimum")
+	_check(str(SettingsModelClass.clamp_value("language", "fr")) == "en", "an unsupported language falls back to English")
+	_check(str(SettingsModelClass.clamp_value("colorblind_mode", "rainbow")) == "off", "an unsupported colorblind mode falls back to off")
+	_check(SettingsModelClass.clamp_value("reduce_motion", "yes") == false, "a non-bool reduce-motion value falls back to false")
+	var sanitized := SettingsModelClass.sanitize(
+		{"master_volume": "loud", "sfx_volume": 0.25, "fullscreen": true}
+	)
+	_check(is_equal_approx(float(sanitized.get("master_volume", 0.0)), 0.8), "sanitize replaces a wrong-type value with its default")
+	_check(is_equal_approx(float(sanitized.get("sfx_volume", 0.0)), 0.25), "sanitize keeps a valid value")
+	_check(SettingsModelClass.sanitize({}).size() == SettingsModelClass.SETTINGS_KEYS.size(), "sanitize returns every settings key")
+	_check(SettingsModelClass.volume_to_db(0.5) < 0.0, "a half volume maps to a negative dB value")
+	_check(SettingsModelClass.volume_to_db(1.0) == 0.0, "full volume maps to 0 dB")
+	_check(
+		SettingsModelClass.window_mode_for(true) == DisplayServer.WINDOW_MODE_FULLSCREEN,
+		"the fullscreen setting maps to the fullscreen window mode"
+	)
+	_check(
+		SettingsModelClass.window_mode_for(false) == DisplayServer.WINDOW_MODE_WINDOWED,
+		"the windowed setting maps to the windowed mode"
+	)
+
+
+func _test_localization_tables() -> void:
+	LocalizationClass.install()
+	var en := LocalizationClass.load_dictionary("en")
+	var zh := LocalizationClass.load_dictionary("zh")
+	_check(en.size() >= LocalizationClass.REQUIRED_KEYS.size(), "the English table carries every required key")
+	var missing := ""
+	for key: String in LocalizationClass.REQUIRED_KEYS:
+		if not en.has(key):
+			missing = "en:" + key
+		elif not zh.has(key):
+			missing = "zh:" + key
+	_check(missing == "", "both locale tables cover every required key (%s)" % missing)
+	var partial := LocalizationClass.build_translation("zh", {"ui_menu_title": "标题"}, en)
+	_check(str(partial.get_message("ui_menu_title")) == "标题", "a translated key reads from its own locale")
+	_check(
+		str(partial.get_message("ui_menu_play")) == str(en.get("ui_menu_play", "")),
+		"a key missing from zh falls back to English"
+	)
+	var packed := load(MAIN_MENU_SCENE_PATH) as PackedScene
+	_check(packed != null, "the main menu scene loads for the locale check")
+	if packed == null:
+		return
+	var menu := packed.instantiate()
+	LocalizationClass.set_locale("zh")
+	menu.refresh_texts()
+	var zh_texts: Array = menu.button_texts()
+	_check(zh_texts[0] == zh.get("ui_menu_play", ""), "switching to zh updates the menu without a restart")
+	LocalizationClass.set_locale("en")
+	menu.refresh_texts()
+	_check(menu.button_texts()[0] == "Play", "switching back to en updates the menu in place")
+	menu.free()
+
+
+func _test_level_select_progress_cards() -> void:
+	var packed := load(LEVEL_SELECT_SCENE_PATH) as PackedScene
+	_check(packed != null, "the level select scene loads for the progress check")
+	if packed == null:
+		return
+	var screen := packed.instantiate()
+	var entries: Array[Dictionary] = [
+		{
+			"index": 0,
+			"name": "First Push",
+			"par_moves": 6,
+			"difficulty": 1,
+			"completed": true,
+			"unlocked": true,
+			"stars": 2,
+			"best_moves": 8,
+			"best_time_ms": 12600,
+		},
+		{
+			"index": 1,
+			"name": "Turn the Corner",
+			"par_moves": 14,
+			"difficulty": 1,
+			"completed": false,
+			"unlocked": false,
+			"stars": 0,
+			"best_moves": 0,
+			"best_time_ms": 0,
+		},
+	]
+	screen.show_levels(entries)
+	var grid := screen.get_node_or_null("Root/Content/Margin/Layout/Grid") as GridContainer
+	_check(grid != null and grid.get_child_count() == 2, "the level select builds a card per entry")
+	if grid == null or grid.get_child_count() != 2:
+		screen.free()
+		return
+	var first := grid.get_child(0) as Button
+	var second := grid.get_child(1) as Button
+	var first_texts: Array[String] = []
+	for label: Node in first.find_children("*", "Label", true, false):
+		first_texts.append((label as Label).text)
+	_check(first_texts.has("Stars: 2/3"), "a completed card shows its star count")
+	_check(
+		first_texts.has("Best: 8 moves · 0:12.6"),
+		"a completed card shows its best moves and time"
+	)
+	_check(second.disabled, "a locked card is disabled")
+	var second_texts: Array[String] = []
+	for label: Node in second.find_children("*", "Label", true, false):
+		second_texts.append((label as Label).text)
+	_check(second_texts.has("Locked"), "a locked card says it is locked")
+	_check(not second_texts.has("Turn the Corner"), "a locked card hides the level name")
+	screen.free()
+
+
+func _test_settings_screen() -> void:
+	_check(ResourceLoader.exists(SETTINGS_SCENE_PATH), "the real settings screen scene exists")
+	var packed := load(SETTINGS_SCENE_PATH) as PackedScene
+	_check(packed != null, "the settings screen scene loads")
+	if packed == null:
+		return
+	var screen := packed.instantiate()
+	_check(screen is CanvasLayer, "the settings screen is a canvas layer")
+	var values := SettingsModelClass.defaults()
+	values["language"] = "zh"
+	values["master_volume"] = 0.5
+	screen.bind_values(values)
+	LocalizationClass.set_locale("en")
+	screen.refresh_texts()
+	var title := screen.get_node_or_null("Root/Content/Margin/Layout/Title") as Label
+	var rows := "Root/Content/Margin/Layout/Scroll/Rows"
+	var slider := screen.get_node_or_null(rows + "/MasterRow/Slider") as HSlider
+	var language_option := screen.get_node_or_null(rows + "/LanguageRow/Option") as OptionButton
+	var colorblind_option := screen.get_node_or_null(rows + "/ColorblindRow/Option") as OptionButton
+	var reduce_check := screen.get_node_or_null(rows + "/ReduceMotion") as CheckButton
+	var fullscreen_check := screen.get_node_or_null(rows + "/Fullscreen") as CheckButton
+	_check(
+		title != null and slider != null and language_option != null and colorblind_option != null,
+		"the settings screen carries its labels and controls"
+	)
+	if slider == null or language_option == null or title == null:
+		screen.free()
+		return
+	_check(title.text == "Settings", "the settings title is translated")
+	_check(is_equal_approx(slider.value, 50.0), "bind_values shows the stored master volume")
+	_check(language_option.selected == 1, "bind_values shows the stored language")
+	_check(screen.get_node_or_null(rows + "/ReduceMotion") is CheckButton, "the settings screen carries the reduce-motion toggle")
+	_check(screen.get_node_or_null(rows + "/Fullscreen") is CheckButton, "the settings screen carries the fullscreen toggle")
+	_check(reduce_check != null and fullscreen_check != null, "both toggles load")
+	var emitted: Array = []
+	screen.setting_changed.connect(
+		func(key: String, value: Variant) -> void: emitted.append([key, value])
+	)
+	slider.value = 25.0
+	slider.value_changed.emit(25.0)
+	_check(emitted.size() == 1 and str(emitted[0][0]) == "master_volume", "moving a slider emits its setting key")
+	_check(emitted.size() == 1 and is_equal_approx(float(emitted[0][1]), 0.25), "the volume slider emits a 0..1 value")
+	language_option.item_selected.emit(0)
+	_check(
+		emitted.size() == 2 and str(emitted[1][0]) == "language" and str(emitted[1][1]) == "en",
+		"choosing a language emits the language setting"
+	)
+	colorblind_option.item_selected.emit(1)
+	_check(
+		emitted.size() == 3 and str(emitted[2][1]) == "deuteranopia",
+		"choosing a colorblind mode emits the mode setting"
+	)
+	if reduce_check != null:
+		reduce_check.toggled.emit(true)
+	_check(
+		emitted.size() == 4 and str(emitted[3][0]) == "reduce_motion",
+		"toggling reduce motion emits its setting"
+	)
+	if fullscreen_check != null:
+		fullscreen_check.toggled.emit(true)
+	_check(
+		emitted.size() == 5 and str(emitted[4][0]) == "fullscreen",
+		"toggling fullscreen emits its setting"
+	)
+	LocalizationClass.set_locale("zh")
+	screen.refresh_texts()
+	_check(title.text == "设置", "the settings title re-translates after a language switch")
+	_check(
+		(screen.get_node_or_null(rows + "/MasterRow/Label") as Label).text == "主音量",
+		"a settings row re-translates after a language switch"
+	)
+	LocalizationClass.set_locale("en")
+	screen.refresh_texts()
+	screen.free()
+
+
+func _test_colorblind_and_reduce_motion() -> void:
+	var board := BoardBuilderClass.new()
+	board.build(_make_level(BASIC_TILES))
+	_check(board.colorblind_marker_count() >= 4, "the board builds colorblind shape markers")
+	_check(not board.colorblind_markers_visible(), "the shape markers stay hidden while colorblind mode is off")
+	board.set_colorblind_mode(true)
+	_check(board.is_colorblind_mode(), "the board reports colorblind mode")
+	_check(board.colorblind_markers_visible(), "every shape marker becomes visible in colorblind mode")
+	_check(
+		board.get_node_or_null("CbGoalMark_5_1_0") != null
+		and (board.get_node_or_null("Crate_0") as Node).get_node_or_null("CbCrateMark_0") != null
+		and (board.get_node_or_null("Player") as Node).get_node_or_null("CbPlayerMark") != null,
+		"the goal, the crate and the player each carry a shape marker"
+	)
+	board.set_colorblind_mode(false)
+	_check(not board.colorblind_markers_visible(), "turning the mode off hides the markers again")
+	board.free()
+	_check(is_equal_approx(CameraRigClass.tween_seconds(0.28, 1.0, false), 0.28), "camera sensitivity 1 keeps the base tween time")
+	_check(is_equal_approx(CameraRigClass.tween_seconds(0.28, 2.0, false), 0.14), "camera sensitivity 2 halves the tween time")
+	_check(CameraRigClass.tween_seconds(0.28, 1.0, true) == 0.0, "reduce motion makes a camera tween instant")
+	var pair := _make_controller(_make_level(BASIC_TILES))
+	var controller: GameplayControllerClass = pair[0]
+	controller.animation_enabled = true
+	controller.reduce_motion = false
+	_check(controller.motion_enabled(), "a fresh controller allows animation")
+	controller.reduce_motion = true
+	_check(not controller.motion_enabled(), "reduce motion disables tile animation")
+	controller.free()
+	pair[1].free()
+
+
+func _clean_save_test_files(path: String) -> void:
+	for suffix: String in ["", ".tmp", ".bak"]:
+		if FileAccess.file_exists(path + suffix):
+			DirAccess.remove_absolute(path + suffix)
+	var prefix := path.get_base_dir() + "/" + path.get_file().get_basename()
+	for file_name: String in DirAccess.get_files_at(path.get_base_dir()):
+		if file_name.begins_with(prefix.get_file() + ".corrupt-"):
+			DirAccess.remove_absolute(path.get_base_dir() + "/" + file_name)
+		elif file_name.begins_with(prefix.get_file() + ".newer-"):
+			DirAccess.remove_absolute(path.get_base_dir() + "/" + file_name)
+
+
+func _write_test_text(path: String, text: String) -> void:
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	if file == null:
+		return
+	file.store_string(text)
+	file.close()
+
+
+func _read_test_text(path: String) -> String:
+	if not FileAccess.file_exists(path):
+		return ""
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		return ""
+	var text := file.get_as_text()
+	file.close()
+	return text

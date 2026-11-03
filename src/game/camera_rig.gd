@@ -27,6 +27,9 @@ const MIN_SAMPLE_STEP := 0.001
 ## Inset of the sampled cell corners, as a fraction of one cell.
 const CELL_FOOTPRINT_INSET_RATIO := 0.45
 const MIN_ASPECT := 0.01
+## Settings range for camera sensitivity, from design/settings-and-save.md.
+const SENSITIVITY_MIN := 0.5
+const SENSITIVITY_MAX := 2.0
 
 @export var base_yaw_degrees: float = 45.0
 @export var pitch_degrees: float = 40.0
@@ -41,6 +44,12 @@ const MIN_ASPECT := 0.01
 @export var occlusion_alpha: float = 0.22
 @export var occlusion_seconds: float = 0.12
 @export var camera_distance: float = 20.0
+
+## Settings hooks: `sensitivity` divides the rotation/zoom tween time (2.0 is
+## twice as fast) and `reduce_motion` makes every camera move and wall fade
+## instant, per design/accessibility.md "Motion, flashing and timing".
+@export var sensitivity: float = 1.0
+@export var reduce_motion: bool = false
 
 var _level: LevelDataScript
 var _board: BoardBuilderScript
@@ -96,7 +105,9 @@ func update_occlusion() -> void:
 		_level.columns,
 		_level.rows
 	)
-	_board.apply_wall_fade(occluded, occlusion_alpha, occlusion_seconds)
+	_board.apply_wall_fade(
+		occluded, occlusion_alpha, 0.0 if reduce_motion else occlusion_seconds
+	)
 
 
 ## Points that must stay visible: the centre and four inset corners of the
@@ -144,9 +155,22 @@ func zoom_by(direction: int) -> void:
 	_zoom = target
 	if _zoom_tween != null and _zoom_tween.is_valid():
 		_zoom_tween.kill()
+	var duration := tween_seconds(zoom_seconds, sensitivity, reduce_motion)
+	if duration <= 0.0:
+		_camera.size = _fitted_size * _zoom
+		update_occlusion()
+		return
 	_zoom_tween = create_tween()
-	_zoom_tween.tween_property(_camera, "size", _fitted_size * _zoom, zoom_seconds)
+	_zoom_tween.tween_property(_camera, "size", _fitted_size * _zoom, duration)
 	_zoom_tween.finished.connect(update_occlusion)
+
+
+## Duration of one camera tween after the sensitivity setting and reduced motion
+## are applied. Zero means the move happens in the same frame.
+static func tween_seconds(base_seconds: float, sensitivity_value: float, reduce: bool) -> float:
+	if reduce:
+		return 0.0
+	return base_seconds / clampf(sensitivity_value, SENSITIVITY_MIN, SENSITIVITY_MAX)
 
 
 ## Absolute yaw of a quarter-turn state, wrapped into 0..360 degrees.
@@ -320,12 +344,18 @@ func _start_rotation(direction: int) -> void:
 		_zoom_tween.kill()
 	var target_yaw := _current_yaw()
 	var camera_local := _apply_framing(target_yaw, true)
+	var duration := tween_seconds(rotate_seconds, sensitivity, reduce_motion)
+	if duration <= 0.0:
+		rotation.y = deg_to_rad(target_yaw)
+		_camera.position = camera_local
+		_on_rotation_finished()
+		return
 	_rotate_tween = create_tween()
 	_rotate_tween.tween_property(
-		self, "rotation:y", deg_to_rad(target_yaw), rotate_seconds
+		self, "rotation:y", deg_to_rad(target_yaw), duration
 	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_rotate_tween.parallel().tween_property(
-		_camera, "position", camera_local, rotate_seconds
+		_camera, "position", camera_local, duration
 	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_rotate_tween.finished.connect(_on_rotation_finished)
 

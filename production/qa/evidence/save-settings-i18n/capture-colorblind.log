@@ -1,0 +1,6 @@
+[capture] removed stale file: C:\Users\yinha\.dsh\state\superagent-sokoban\work\save-settings-i18n-a89ec3c35a53\production\qa\evidence\save-settings-i18n\colorblind.png
+[capture] target: C:\Users\yinha\.dsh\state\superagent-sokoban\work\save-settings-i18n-a89ec3c35a53\production\qa\evidence\save-settings-i18n\colorblind.png
+[capture] user arguments: --screen=gameplay --level=1 --colorblind=deuteranopia --save=user://evidence-save-cb.json --fresh-save
+[capture] waiting up to 60s for the PNG
+$ D:/SteamLibrary/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe --path . -- --studio-capture=C:\Users\yinha\.dsh\state\superagent-sokoban\work\save-settings-i18n-a89ec3c35a53\production\qa\evidence\save-settings-i18n\colorblind.png --screen=gameplay --level=1 --colorblind=deuteranopia --save=user://evidence-save-cb.json --fresh-save
+[capture] OK: C:\Users\yinha\.dsh\state\superagent-sokoban\work\save-settings-i18n-a89ec3c35a53\production\qa\evidence\save-settings-i18n\colorblind.png (45622 bytes)

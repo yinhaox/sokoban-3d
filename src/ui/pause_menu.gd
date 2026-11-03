@@ -5,19 +5,27 @@ extends CanvasLayer
 ## Settings and Main Menu over the frozen room. The destructive actions ask the
 ## confirm modal before they run; this screen only emits the intent.
 ##
-## Localization is out of scope for this story, so the labels are English
-## literals in this script until the localization story swaps them for `tr()`.
+## Labels are translation keys read through `tr()` and `refresh_texts()`
+## re-reads them after a language switch.
 
 signal resume_requested
 signal restart_requested
 signal settings_requested
 signal main_menu_requested
 
-const TITLE_TEXT := "Paused"
-const RESUME_TEXT := "Resume"
-const RESTART_TEXT := "Restart"
-const SETTINGS_TEXT := "Settings"
-const MAIN_MENU_TEXT := "Main Menu"
+const TITLE_KEY := "ui_pause_title"
+const BUTTON_KEYS: Array[String] = [
+	"ui_pause_resume",
+	"ui_pause_restart",
+	"ui_pause_settings",
+	"ui_pause_main_menu",
+]
+const BUTTON_PATHS: Array[String] = [
+	"Root/Center/Panel/Content/Resume",
+	"Root/Center/Panel/Content/Restart",
+	"Root/Center/Panel/Content/Settings",
+	"Root/Center/Panel/Content/MainMenu",
+]
 const BUTTON_MIN_SIZE := Vector2(300, 48)
 
 var _root: Control
@@ -45,7 +53,18 @@ func button_texts() -> Array[String]:
 	return texts
 
 
+## Re-reads every label from the active locale.
+func refresh_texts() -> void:
+	_bind()
+	if not _bound or _title == null:
+		return
+	_title.text = tr(TITLE_KEY)
+	for index: int in _buttons.size():
+		_buttons[index].text = tr(BUTTON_KEYS[index])
+
+
 func _bind() -> void:
+	Localization.install()
 	if _bound:
 		return
 	_bound = true
@@ -56,26 +75,16 @@ func _bind() -> void:
 	if _root.theme == null:
 		_root.theme = UiTheme.build()
 	_title = get_node_or_null("Root/Center/Panel/Content/Title") as Label
-	var button_paths: Array[String] = [
-		"Root/Center/Panel/Content/Resume",
-		"Root/Center/Panel/Content/Restart",
-		"Root/Center/Panel/Content/Settings",
-		"Root/Center/Panel/Content/MainMenu",
-	]
-	for path: String in button_paths:
+	for path: String in BUTTON_PATHS:
 		var button := get_node_or_null(path) as Button
 		if button == null:
 			push_error("pause_menu: missing button %s" % path)
 			continue
 		button.custom_minimum_size = BUTTON_MIN_SIZE
 		_buttons.append(button)
-	if _buttons.size() != button_paths.size():
+	if _buttons.size() != BUTTON_PATHS.size():
 		return
-	if _title != null:
-		_title.text = TITLE_TEXT
-	var texts: Array[String] = [RESUME_TEXT, RESTART_TEXT, SETTINGS_TEXT, MAIN_MENU_TEXT]
-	for index: int in _buttons.size():
-		_buttons[index].text = texts[index]
+	refresh_texts()
 	var controls: Array[Control] = []
 	controls.assign(_buttons)
 	UiFocus.wire_vertical(controls)
