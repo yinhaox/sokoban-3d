@@ -1,8 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://src/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://src/game/board_builder.gd" id="2_board"]
 [ext_resource type="Script" path="res://src/game/camera_rig.gd" id="3_camera"]
+[ext_resource type="Script" path="res://src/game/gameplay_controller.gd" id="4_gameplay"]
+[ext_resource type="PackedScene" path="res://scenes/ui/victory_panel.tscn" id="5_victory"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -37,3 +39,8 @@ current = true
 near = 0.05
 far = 100.0
 size = 9.0
+
+[node name="Gameplay" type="Node3D" parent="."]
+script = ExtResource("4_gameplay")
+
+[node name="VictoryPanel" parent="." instance=ExtResource("5_victory")]

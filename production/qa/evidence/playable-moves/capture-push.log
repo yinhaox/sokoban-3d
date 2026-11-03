@@ -1,0 +1,6 @@
+[capture] removed stale file: .\production\qa\evidence\playable-moves\after-push.png
+[capture] target: .\production\qa\evidence\playable-moves\after-push.png
+[capture] user arguments: --script=right,right
+[capture] waiting up to 60s for the PNG
+$ godot --path . -- --studio-capture=.\production\qa\evidence\playable-moves\after-push.png --script=right,right
+[capture] OK: .\production\qa\evidence\playable-moves\after-push.png (32066 bytes)
