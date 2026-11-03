@@ -12,7 +12,7 @@ One row per system. Add the row in the same pull request that adds the design do
 | Camera and presentation | technical-artist | in review | design/camera-and-presentation.md | 等距相机、遮挡淡出、程序化材质、光照与补间节奏 | design/core-rules.md, design/level-format.md, design/accessibility.md |
 | UI flow | game-designer | in review | design/ui-flow.md | 全部界面与导航、HUD、暂停与胜利、危险操作确认、本地化键 | design/core-rules.md, design/input-and-controls.md, design/settings-and-save.md, design/accessibility.md |
 | Settings and save | tech-director | in review | design/settings-and-save.md | 设置项、存档结构、版本迁移与损坏恢复 | design/input-and-controls.md, design/ui-flow.md, design/audio.md, design/technical-architecture.md |
-| Audio | technical-artist | in review | design/audio.md | 程序生成音效清单、生成方式、混音与许可 | design/ui-flow.md, design/settings-and-save.md, design/accessibility.md |
+| Audio | technical-artist | shipped | design/audio.md | 运行时合成音效的 cue 表、波形与包络、最小间隔、总线、混音与许可 | design/ui-flow.md, design/settings-and-save.md, design/accessibility.md, design/release.md |
 | Accessibility | game-designer | in review | design/accessibility.md | 形状与颜色独立、字号与 UI 缩放、键盘导航、减少动态效果 | design/ui-flow.md, design/camera-and-presentation.md, design/audio.md, design/settings-and-save.md |
 | Technical architecture | tech-director | in review | design/technical-architecture.md | 逻辑与渲染分层、autoload 职责、场景划分、信号契约与性能预算 | design/level-format.md, design/settings-and-save.md, design/core-rules.md |
 | Release | release-manager | in review | design/release.md | 版本与平台、许可与致谢、崩溃处理、发布门槛 | design/technical-architecture.md, design/settings-and-save.md, design/accessibility.md, design/audio.md |
