@@ -306,7 +306,7 @@ func _test_main_scene() -> void:
 
 
 func _test_project_settings() -> void:
-	_check(ProjectSettings.get_setting("application/config/name", "") == "Game Studio", "project name is Game Studio")
+	_check(ProjectSettings.get_setting("application/config/name", "") == "Sokoban 3D", "project name is Sokoban 3D")
 	_check(ProjectSettings.get_setting("application/run/main_scene", "") == MAIN_SCENE_PATH, "main scene is registered in project.godot")
 	_check(ProjectSettings.get_setting("autoload/StudioCapture", "") == "*" + CAPTURE_SCRIPT_PATH, "StudioCapture autoload points at the capture addon")
 	_check(int(ProjectSettings.get_setting("display/window/size/viewport_width", 0)) == 1152, "viewport width is 1152")
