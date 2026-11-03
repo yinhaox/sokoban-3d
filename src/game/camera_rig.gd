@@ -41,7 +41,10 @@ const SENSITIVITY_MAX := 2.0
 @export var fill_ratio: float = 0.8
 @export var size_min: float = 6.0
 @export var size_max: float = 18.0
-@export var occlusion_alpha: float = 0.22
+## Alpha of a faded wall. The design default is 0.12, inside the documented
+## 0.05..0.25 range, so a ghosted wall never competes with the floor, the crates
+## or the player for attention (issue #30).
+@export var occlusion_alpha: float = 0.12
 @export var occlusion_seconds: float = 0.12
 @export var camera_distance: float = 20.0
 

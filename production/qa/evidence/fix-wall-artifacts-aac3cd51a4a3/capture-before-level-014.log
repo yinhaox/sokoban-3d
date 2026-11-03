@@ -1,0 +1,5 @@
+[capture] target: C:\Users\yinha\.dsh\state\superagent-sokoban\work\sokoban-before\production\qa\evidence\fix-wall-artifacts-aac3cd51a4a3\before-level-014.png
+[capture] user arguments: --level=level-014
+[capture] waiting up to 60s for the PNG
+$ D:/SteamLibrary/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe --path . -- --studio-capture=C:\Users\yinha\.dsh\state\superagent-sokoban\work\sokoban-before\production\qa\evidence\fix-wall-artifacts-aac3cd51a4a3\before-level-014.png --level=level-014
+[capture] OK: C:\Users\yinha\.dsh\state\superagent-sokoban\work\sokoban-before\production\qa\evidence\fix-wall-artifacts-aac3cd51a4a3\before-level-014.png (74401 bytes)
