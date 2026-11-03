@@ -2,30 +2,28 @@ class_name VictoryPanel
 extends CanvasLayer
 
 ## Result overlay from design/ui-flow.md "Victory": the stars, moves against
-## par, pushes, elapsed time and the New best marker, with Retry, Next (hidden /
-## disabled on the last level) and Level Select. Keyboard reachable, with Retry
-## focused so the safe repeat action is one press away.
+## par, pushes, elapsed time and the New best marker, with Retry, Next (disabled
+## on the last level) and Level Select. Keyboard reachable, with Retry focused so
+## the safe repeat action is one press away.
 ##
 ## The overlay owns no game state. `show_result()` receives the payload from the
 ## scene layer and the buttons emit intent signals; they never call gameplay
-## methods directly (.dsh/rules/ui.md).
-##
-## Localization is out of scope for this story (issue #11 and #13), so the labels
-## carry English literals until the localization story swaps them for `tr()`.
+## methods directly (.dsh/rules/ui.md). Labels come from `tr()`;
+## `refresh_texts()` re-renders the last result after a language switch.
 
 signal retry_requested
 signal next_requested
 signal level_select_requested
 
-const TITLE_TEXT := "Level Complete"
-const RETRY_TEXT := "Retry"
-const NEXT_TEXT := "Next"
-const LEVEL_SELECT_TEXT := "Level Select"
-const MOVES_WITH_PAR_FORMAT := "Moves: %d (par %d)"
-const MOVES_FORMAT := "Moves: %d"
-const PUSHES_FORMAT := "Pushes: %d"
-const TIME_FORMAT := "Time: %s"
-const STARS_FORMAT := "%d of 3 stars"
+const TITLE_KEY := "ui_victory_title"
+const RETRY_KEY := "ui_victory_retry"
+const NEXT_KEY := "ui_victory_next"
+const LEVEL_SELECT_KEY := "ui_victory_level_select"
+const MOVES_WITH_PAR_KEY := "ui_victory_moves_par"
+const MOVES_KEY := "ui_victory_moves"
+const PUSHES_KEY := "ui_victory_pushes"
+const TIME_KEY := "ui_victory_time"
+const STARS_KEY := "ui_victory_stars"
 const BUTTON_MIN_SIZE := Vector2(130, UiTheme.MIN_TARGET_PX)
 const LEVEL_SELECT_MIN_SIZE := Vector2(160, UiTheme.MIN_TARGET_PX)
 
@@ -39,6 +37,9 @@ var _time_label: Label
 var _retry: Button
 var _next: Button
 var _level_select: Button
+var _last_result: Dictionary = {}
+var _last_has_next: bool = false
+var _shown: bool = false
 var _bound: bool = false
 
 
@@ -51,20 +52,10 @@ func _ready() -> void:
 ## level, which disables the `Next` button.
 func show_result(result: Dictionary, has_next: bool) -> void:
 	_bind()
-	if _moves_label == null or _retry == null or _next == null or _level_select == null:
-		return
-	var moves := int(result.get("moves", 0))
-	var par_moves := int(result.get("par_moves", 0))
-	var stars := StarRating.stars_for_moves(moves, par_moves)
-	_stars.set_stars(stars)
-	_stars_label.text = STARS_FORMAT % stars
-	if par_moves > 0:
-		_moves_label.text = MOVES_WITH_PAR_FORMAT % [moves, par_moves]
-	else:
-		_moves_label.text = MOVES_FORMAT % moves
-	_pushes_label.text = PUSHES_FORMAT % int(result.get("pushes", 0))
-	_time_label.text = TIME_FORMAT % format_elapsed_ms(int(result.get("elapsed_ms", 0)))
-	_next.disabled = not has_next
+	_last_result = result.duplicate(true)
+	_last_has_next = has_next
+	_shown = true
+	_render_result()
 	visible = true
 	if is_inside_tree():
 		_retry.grab_focus()
@@ -72,6 +63,7 @@ func show_result(result: Dictionary, has_next: bool) -> void:
 
 func hide_panel() -> void:
 	_bind()
+	_shown = false
 	visible = false
 
 
@@ -87,6 +79,19 @@ func next_enabled() -> bool:
 	return _next != null and not _next.disabled
 
 
+## Re-reads every label from the active locale and re-renders the last result.
+func refresh_texts() -> void:
+	_bind()
+	if not _bound:
+		return
+	_title.text = tr(TITLE_KEY)
+	_retry.text = tr(RETRY_KEY)
+	_next.text = tr(NEXT_KEY)
+	_level_select.text = tr(LEVEL_SELECT_KEY)
+	if _shown:
+		_render_result()
+
+
 ## `m:ss.t` with a tenth of a second, matching the 100 ms timer precision in
 ## design/core-rules.md `timer_precision_ms`. Delegates to the shared formatter
 ## so the HUD and the overlay never disagree.
@@ -94,7 +99,25 @@ static func format_elapsed_ms(milliseconds: int) -> String:
 	return UiFormat.elapsed_ms(milliseconds)
 
 
+func _render_result() -> void:
+	if _moves_label == null or _retry == null or _next == null or _level_select == null:
+		return
+	var moves := int(_last_result.get("moves", 0))
+	var par_moves := int(_last_result.get("par_moves", 0))
+	var stars := StarRating.stars_for_moves(moves, par_moves)
+	_stars.set_stars(stars)
+	_stars_label.text = tr(STARS_KEY) % stars
+	if par_moves > 0:
+		_moves_label.text = tr(MOVES_WITH_PAR_KEY) % [moves, par_moves]
+	else:
+		_moves_label.text = tr(MOVES_KEY) % moves
+	_pushes_label.text = tr(PUSHES_KEY) % int(_last_result.get("pushes", 0))
+	_time_label.text = tr(TIME_KEY) % format_elapsed_ms(int(_last_result.get("elapsed_ms", 0)))
+	_next.disabled = not _last_has_next
+
+
 func _bind() -> void:
+	Localization.install()
 	if _bound:
 		return
 	_bound = true
@@ -116,11 +139,6 @@ func _bind() -> void:
 	if _retry == null or _next == null or _level_select == null:
 		push_error("victory_panel: the overlay buttons are missing")
 		return
-	if _title != null:
-		_title.text = TITLE_TEXT
-	_retry.text = RETRY_TEXT
-	_next.text = NEXT_TEXT
-	_level_select.text = LEVEL_SELECT_TEXT
 	_retry.custom_minimum_size = BUTTON_MIN_SIZE
 	_next.custom_minimum_size = BUTTON_MIN_SIZE
 	_level_select.custom_minimum_size = LEVEL_SELECT_MIN_SIZE
@@ -129,6 +147,7 @@ func _bind() -> void:
 	_retry.pressed.connect(_on_retry_pressed)
 	_next.pressed.connect(_on_next_pressed)
 	_level_select.pressed.connect(_on_level_select_pressed)
+	refresh_texts()
 
 
 func _on_retry_pressed() -> void:

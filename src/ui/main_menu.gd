@@ -6,9 +6,9 @@ extends CanvasLayer
 ## one. The menu owns no game state; every button emits an intent and the boot
 ## scene decides what happens.
 ##
-## Localization is out of scope for this story (issue #13), so the labels are
-## English literals in this script, the same convention the victory panel
-## already documents; the localization story replaces them with `tr()` keys.
+## Every label is read from the translation table through `tr()` and
+## `refresh_texts()` re-reads them after a language switch, so the menu updates
+## without a restart. A damaged or newer profile shows one notice line.
 
 signal play_requested
 signal level_select_requested
@@ -16,13 +16,22 @@ signal settings_requested
 signal credits_requested
 signal quit_requested
 
-const TITLE_TEXT := "Sokoban 3D"
-const SUBTITLE_TEXT := "A quiet puzzle in a small room"
-const PLAY_TEXT := "Play"
-const LEVEL_SELECT_TEXT := "Level Select"
-const SETTINGS_TEXT := "Settings"
-const CREDITS_TEXT := "Credits"
-const QUIT_TEXT := "Quit"
+const TITLE_KEY := "ui_menu_title"
+const SUBTITLE_KEY := "ui_menu_subtitle"
+const BUTTON_KEYS: Array[String] = [
+	"ui_menu_play",
+	"ui_menu_level_select",
+	"ui_menu_settings",
+	"ui_menu_credits",
+	"ui_menu_quit",
+]
+const BUTTON_PATHS: Array[String] = [
+	"Root/Content/Margin/Layout/Buttons/Play",
+	"Root/Content/Margin/Layout/Buttons/LevelSelect",
+	"Root/Content/Margin/Layout/Buttons/Settings",
+	"Root/Content/Margin/Layout/Buttons/Credits",
+	"Root/Content/Margin/Layout/Buttons/Quit",
+]
 const VERSION_FORMAT := "v%s"
 const BUTTON_MIN_SIZE := Vector2(320, 48)
 
@@ -30,7 +39,9 @@ var _root: Control
 var _title: Label
 var _subtitle: Label
 var _version: Label
+var _notice: Label
 var _buttons: Array[Button] = []
+var _notice_text: String = ""
 var _bound: bool = false
 
 
@@ -43,6 +54,14 @@ func focus_default() -> void:
 	_bind()
 	if is_inside_tree() and not _buttons.is_empty():
 		_buttons[0].grab_focus()
+
+
+## Shows one line about a damaged, newer or unsaveable profile. An empty string
+## hides the label.
+func set_notice(text: String) -> void:
+	_bind()
+	_notice_text = text
+	_update_notice()
 
 
 ## Shows the project version in the corner, or hides the label when the project
@@ -64,7 +83,27 @@ func button_texts() -> Array[String]:
 	return texts
 
 
+## Re-reads every label from the active locale.
+func refresh_texts() -> void:
+	_bind()
+	if not _bound:
+		return
+	_title.text = tr(TITLE_KEY)
+	_subtitle.text = tr(SUBTITLE_KEY)
+	for index: int in _buttons.size():
+		_buttons[index].text = tr(BUTTON_KEYS[index])
+	_update_notice()
+
+
+func _update_notice() -> void:
+	if _notice == null:
+		return
+	_notice.visible = not _notice_text.is_empty()
+	_notice.text = _notice_text
+
+
 func _bind() -> void:
+	Localization.install()
 	if _bound:
 		return
 	_bound = true
@@ -77,29 +116,17 @@ func _bind() -> void:
 	_title = get_node_or_null("Root/Content/Margin/Layout/Title") as Label
 	_subtitle = get_node_or_null("Root/Content/Margin/Layout/Subtitle") as Label
 	_version = get_node_or_null("Root/Version") as Label
-	var button_paths: Array[String] = [
-		"Root/Content/Margin/Layout/Buttons/Play",
-		"Root/Content/Margin/Layout/Buttons/LevelSelect",
-		"Root/Content/Margin/Layout/Buttons/Settings",
-		"Root/Content/Margin/Layout/Buttons/Credits",
-		"Root/Content/Margin/Layout/Buttons/Quit",
-	]
-	for index: int in button_paths.size():
-		var button := get_node_or_null(button_paths[index]) as Button
+	_notice = get_node_or_null("Root/Content/Margin/Layout/Notice") as Label
+	for path: String in BUTTON_PATHS:
+		var button := get_node_or_null(path) as Button
 		if button == null:
-			push_error("main_menu: missing button %s" % button_paths[index])
+			push_error("main_menu: missing button %s" % path)
 			continue
 		button.custom_minimum_size = BUTTON_MIN_SIZE
 		_buttons.append(button)
-	if _buttons.size() != button_paths.size():
+	if _buttons.size() != BUTTON_PATHS.size():
 		return
-	if _title != null:
-		_title.text = TITLE_TEXT
-	if _subtitle != null:
-		_subtitle.text = SUBTITLE_TEXT
-	var texts: Array[String] = [PLAY_TEXT, LEVEL_SELECT_TEXT, SETTINGS_TEXT, CREDITS_TEXT, QUIT_TEXT]
-	for index: int in _buttons.size():
-		_buttons[index].text = texts[index]
+	refresh_texts()
 	var controls: Array[Control] = []
 	controls.assign(_buttons)
 	UiFocus.wire_vertical(controls)

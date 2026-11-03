@@ -1,0 +1,6 @@
+[capture] removed stale file: .\production\qa\evidence\save-settings-i18n\colorblind.png
+[capture] target: .\production\qa\evidence\save-settings-i18n\colorblind.png
+[capture] user arguments: --screen=gameplay --level=1 --colorblind=deuteranopia --save=user://evidence-save-cb.json --fresh-save
+[capture] waiting up to 60s for the PNG
+$ godot --path . -- --studio-capture=.\production\qa\evidence\save-settings-i18n\colorblind.png --screen=gameplay --level=1 --colorblind=deuteranopia --save=user://evidence-save-cb.json --fresh-save
+[capture] OK: .\production\qa\evidence\save-settings-i18n\colorblind.png (45622 bytes)
