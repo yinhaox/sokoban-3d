@@ -1,55 +1,47 @@
 [check] project: .
 $ godot --headless --path . --import
---- output (last 16 line(s)) ---
-Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
-
-[   0% ] [90m[1mfirst_scan_filesystem[22m | Started 项目初始化 (5 steps)[39m[0m
-[   0% ] [90m[1mfirst_scan_filesystem[22m | 正在扫描文件结构……[39m[0m
-[  16% ] [90m[1mfirst_scan_filesystem[22m | 正在加载全局类名……[39m[0m
-[  33% ] [90m[1mfirst_scan_filesystem[22m | 正在校验 GDExtension……[39m[0m
-[  50% ] [90m[1mfirst_scan_filesystem[22m | 正在创建自动加载脚本……[39m[0m
-[  66% ] [90m[1mfirst_scan_filesystem[22m | 正在初始化插件……[39m[0m
-[  83% ] [90m[1mfirst_scan_filesystem[22m | 正在启动文件扫描……[39m[0m
-[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
-[0m
+--- output (last 40 line(s)) ---
+   at: _process_file_system (editor/file_system/editor_file_system.cpp:1391)
+WARNING: Missing .uid file for path "res://src/logic/save_store.gd". The file was re-created from cache.
+   at: _process_file_system (editor/file_system/editor_file_system.cpp:1391)
+WARNING: Missing .uid file for path "res://src/logic/settings_model.gd". The file was re-created from cache.
+   at: _process_file_system (editor/file_system/editor_file_system.cpp:1391)
+WARNING: Missing .uid file for path "res://src/logic/star_rating.gd". The file was re-created from cache.
+   at: _process_file_system (editor/file_system/editor_file_system.cpp:1391)
+WARNING: Missing .uid file for path "res://src/ui/confirm_modal.gd". The file was re-created from cache.
+   at: _process_file_system (editor/file_system/editor_file_system.cpp:1391)
+WARNING: Missing .uid file for path "res://src/ui/hud.gd". The file was re-created from cache.
+   at: _process_file_system (editor/file_system/editor_file_system.cpp:1391)
+WARNING: Missing .uid file for path "res://src/ui/info_panel.gd". The file was re-created from cache.
+   at: _process_file_system (editor/file_system/editor_file_system.cpp:1391)
+WARNING: Missing .uid file for path "res://src/ui/level_select.gd". The file was re-created from cache.
+   at: _process_file_system (editor/file_system/editor_file_system.cpp:1391)
+WARNING: Missing .uid file for path "res://src/ui/main_menu.gd". The file was re-created from cache.
+   at: _process_file_system (editor/file_system/editor_file_system.cpp:1391)
+WARNING: Missing .uid file for path "res://src/ui/pause_menu.gd". The file was re-created from cache.
+   at: _process_file_system (editor/file_system/editor_file_system.cpp:1391)
+WARNING: Missing .uid file for path "res://src/ui/screen_router.gd". The file was re-created from cache.
+   at: _process_file_system (editor/file_system/editor_file_system.cpp:1391)
+WARNING: Missing .uid file for path "res://src/ui/settings_screen.gd". The file was re-created from cache.
+   at: _process_file_system (editor/file_system/editor_file_system.cpp:1391)
+WARNING: Missing .uid file for path "res://src/ui/star_row.gd". The file was re-created from cache.
+   at: _process_file_system (editor/file_system/editor_file_system.cpp:1391)
+WARNING: Missing .uid file for path "res://src/ui/ui_focus.gd". The file was re-created from cache.
+   at: _process_file_system (editor/file_system/editor_file_system.cpp:1391)
+WARNING: Missing .uid file for path "res://src/ui/ui_format.gd". The file was re-created from cache.
+   at: _process_file_system (editor/file_system/editor_file_system.cpp:1391)
+WARNING: Missing .uid file for path "res://src/ui/ui_theme.gd". The file was re-created from cache.
+   at: _process_file_system (editor/file_system/editor_file_system.cpp:1391)
+WARNING: Missing .uid file for path "res://src/ui/victory_panel.gd". The file was re-created from cache.
+   at: _process_file_system (editor/file_system/editor_file_system.cpp:1391)
+WARNING: Missing .uid file for path "res://src/main.gd". The file was re-created from cache.
+   at: _process_file_system (editor/file_system/editor_file_system.cpp:1391)
 [   0% ] [90m[1mloading_editor_layout[22m | Started 正在加载编辑器 (5 steps)[39m[0m
 [   0% ] [90m[1mloading_editor_layout[22m | 正在加载编辑器布局……[39m[0m
 [  16% ] [90m[1mloading_editor_layout[22m | 正在加载停靠面板……[39m[0m
 [92m[ DONE ][39m [1mloading_editor_layout[22m
 [0m
 [check] import OK
-$ godot --headless --path . --check-only --script res://src/game/board_builder.gd
-[check] ok res://src/game/board_builder.gd
-$ godot --headless --path . --check-only --script res://src/game/camera_rig.gd
-[check] ok res://src/game/camera_rig.gd
-$ godot --headless --path . --check-only --script res://src/game/gameplay_controller.gd
-[check] ok res://src/game/gameplay_controller.gd
-$ godot --headless --path . --check-only --script res://src/main.gd
-[check] ok res://src/main.gd
-$ godot --headless --path . --check-only --script res://src/ui/confirm_modal.gd
-[check] ok res://src/ui/confirm_modal.gd
-$ godot --headless --path . --check-only --script res://src/ui/hud.gd
-[check] ok res://src/ui/hud.gd
-$ godot --headless --path . --check-only --script res://src/ui/info_panel.gd
-[check] ok res://src/ui/info_panel.gd
-$ godot --headless --path . --check-only --script res://src/ui/level_select.gd
-[check] ok res://src/ui/level_select.gd
-$ godot --headless --path . --check-only --script res://src/ui/main_menu.gd
-[check] ok res://src/ui/main_menu.gd
-$ godot --headless --path . --check-only --script res://src/ui/pause_menu.gd
-[check] ok res://src/ui/pause_menu.gd
-$ godot --headless --path . --check-only --script res://src/ui/ui_theme.gd
-[check] ok res://src/ui/ui_theme.gd
-$ godot --headless --path . --check-only --script res://src/ui/victory_panel.gd
-[check] ok res://src/ui/victory_panel.gd
 $ godot --headless --path . --check-only --script res://tests/run_tests.gd
 [check] ok res://tests/run_tests.gd
-$ godot --headless --path . --check-only --script res://src/logic/localization.gd
-[check] ok res://src/logic/localization.gd
-$ godot --headless --path . --check-only --script res://src/logic/save_store.gd
-[check] ok res://src/logic/save_store.gd
-$ godot --headless --path . --check-only --script res://src/logic/settings_model.gd
-[check] ok res://src/logic/settings_model.gd
-$ godot --headless --path . --check-only --script res://src/ui/settings_screen.gd
-[check] ok res://src/ui/settings_screen.gd
-[check] parsed 17 changed script(s)
+[check] parsed 1 changed script(s)

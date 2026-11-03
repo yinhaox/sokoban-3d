@@ -1789,6 +1789,7 @@ func _test_save_settings_i18n() -> void:
 	_test_save_unlock_and_records()
 	_test_settings_clamping()
 	_test_localization_tables()
+	_test_level_select_progress_cards()
 	_test_settings_screen()
 	_test_colorblind_and_reduce_motion()
 
@@ -2015,6 +2016,61 @@ func _test_localization_tables() -> void:
 	menu.refresh_texts()
 	_check(menu.button_texts()[0] == "Play", "switching back to en updates the menu in place")
 	menu.free()
+
+
+func _test_level_select_progress_cards() -> void:
+	var packed := load(LEVEL_SELECT_SCENE_PATH) as PackedScene
+	_check(packed != null, "the level select scene loads for the progress check")
+	if packed == null:
+		return
+	var screen := packed.instantiate()
+	var entries: Array[Dictionary] = [
+		{
+			"index": 0,
+			"name": "First Push",
+			"par_moves": 6,
+			"difficulty": 1,
+			"completed": true,
+			"unlocked": true,
+			"stars": 2,
+			"best_moves": 8,
+			"best_time_ms": 12600,
+		},
+		{
+			"index": 1,
+			"name": "Turn the Corner",
+			"par_moves": 14,
+			"difficulty": 1,
+			"completed": false,
+			"unlocked": false,
+			"stars": 0,
+			"best_moves": 0,
+			"best_time_ms": 0,
+		},
+	]
+	screen.show_levels(entries)
+	var grid := screen.get_node_or_null("Root/Content/Margin/Layout/Grid") as GridContainer
+	_check(grid != null and grid.get_child_count() == 2, "the level select builds a card per entry")
+	if grid == null or grid.get_child_count() != 2:
+		screen.free()
+		return
+	var first := grid.get_child(0) as Button
+	var second := grid.get_child(1) as Button
+	var first_texts: Array[String] = []
+	for label: Node in first.find_children("*", "Label", true, false):
+		first_texts.append((label as Label).text)
+	_check(first_texts.has("Stars: 2/3"), "a completed card shows its star count")
+	_check(
+		first_texts.has("Best: 8 moves · 0:12.6"),
+		"a completed card shows its best moves and time"
+	)
+	_check(second.disabled, "a locked card is disabled")
+	var second_texts: Array[String] = []
+	for label: Node in second.find_children("*", "Label", true, false):
+		second_texts.append((label as Label).text)
+	_check(second_texts.has("Locked"), "a locked card says it is locked")
+	_check(not second_texts.has("Turn the Corner"), "a locked card hides the level name")
+	screen.free()
 
 
 func _test_settings_screen() -> void:
