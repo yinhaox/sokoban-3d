@@ -47,9 +47,14 @@ const SENSITIVITY_MAX := 2.0
 
 ## Settings hooks: `sensitivity` divides the rotation/zoom tween time (2.0 is
 ## twice as fast) and `reduce_motion` makes every camera move and wall fade
-## instant, per design/accessibility.md "Motion, flashing and timing".
+## instant, per design/accessibility.md "Motion, flashing and timing". The same
+## accessibility switch also hides the decorative floor grid on the board.
 @export var sensitivity: float = 1.0
-@export var reduce_motion: bool = false
+@export var reduce_motion: bool = false:
+	set(value):
+		reduce_motion = value
+		if _board != null:
+			_board.set_reduce_motion(value)
 
 var _level: LevelDataScript
 var _board: BoardBuilderScript
@@ -68,6 +73,7 @@ var _zoom_tween: Tween
 func setup(level: LevelDataScript, board: BoardBuilderScript) -> void:
 	_level = level
 	_board = board
+	_board.set_reduce_motion(reduce_motion)
 	_quarter_turns = 0
 	_zoom = 1.0
 	position = BoardBuilderScript.level_centre(level)

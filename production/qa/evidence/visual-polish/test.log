@@ -1,0 +1,1035 @@
+$ godot --headless --path . --import
+[test] project: .
+$ godot --headless --path . -s res://tests/run_tests.gd
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+PASS: scenes/main.tscn exists
+PASS: scenes/main.tscn loads as a PackedScene
+PASS: main scene root is a Node3D
+PASS: main scene root is named Main
+PASS: main scene root runs src/main.gd
+PASS: main scene carries a DirectionalLight3D
+PASS: the directional light casts shadows
+PASS: main scene carries a WorldEnvironment
+PASS: main scene carries a Camera3D under the camera rig
+PASS: the camera uses orthogonal projection
+PASS: main scene carries the board builder
+PASS: main scene carries the gameplay controller
+PASS: main scene carries the victory overlay
+PASS: main scene carries the HUD screen
+PASS: main scene carries the MainMenu screen
+PASS: main scene carries the LevelSelect screen
+PASS: main scene carries the PauseMenu screen
+PASS: main scene carries the ConfirmModal screen
+PASS: main scene carries the settings placeholder
+PASS: main scene carries the credits screen
+PASS: the boot level path loads level-001
+PASS: the boot level is level-001
+PASS: project name is Sokoban 3D
+PASS: main scene is registered in project.godot
+PASS: StudioCapture autoload points at the capture addon
+PASS: viewport width is 1152
+PASS: viewport height is 648
+PASS: a valid level fixture loads without errors
+PASS: a level keeps its id field
+PASS: a level keeps its columns and rows
+PASS: a level keeps its par values
+PASS: the player start comes from the '@' tile
+PASS: the box start count comes from the '$' tile
+PASS: the box start cell comes from the '$' tile
+PASS: the goal cell comes from the '.' tile
+PASS: cell_at reports a wall
+PASS: cell_at reports a floor cell
+PASS: cell_at reports a goal cell
+PASS: cell_at reports VOID for a coordinate outside the grid
+PASS: is_wall treats an out-of-grid coordinate as a wall
+PASS: is_wall treats a coordinate past the right edge as a wall
+PASS: is_goal reports only goal cells
+PASS: initial_boxes returns a copy of the starting boxes
+PASS: initial_boxes returns the starting box cell
+PASS: an empty optional notes field is accepted
+PASS: a level with a '* box-on-goal tile validates
+PASS: a '*' tile is a box start
+PASS: a '*' tile is also a goal
+PASS: a level with a '+' player-on-goal tile validates
+PASS: a '+' tile is the player start
+PASS: a '+' tile is also a goal
+PASS: a tile row of the wrong length is rejected
+PASS: a short tile row error names the row index
+PASS: cell_at on an invalid level returns VOID instead of crashing
+PASS: columns outside 5..15 is rejected
+PASS: a column range error names the value
+PASS: rows outside 5..15 is rejected
+PASS: a row range error names the value
+PASS: a level with no player is rejected
+PASS: a missing-player error names the player
+PASS: a level with two players is rejected
+PASS: a goal count that differs from the box count is rejected
+PASS: a goal-count error names the goals
+PASS: an unknown cell character is rejected
+PASS: an unknown-character error names the character
+PASS: a border that is not all walls is rejected
+PASS: a border error names the border
+PASS: a level that starts already solved is rejected
+PASS: a solved-start error says so
+PASS: an id outside level-NNN is rejected
+PASS: an id error names the id field
+PASS: an id that differs from the file stem is rejected
+PASS: a file-stem error names the file stem
+PASS: a missing required field is rejected
+PASS: a missing-field error names the field
+PASS: a field with the wrong type is rejected
+PASS: a wrong-type error says the expected type
+PASS: a tiles field that is not an array is rejected
+PASS: a tiles-type error names the tiles field
+PASS: par_pushes greater than par_moves is rejected
+PASS: a par error names par_pushes
+PASS: notes longer than 200 characters is rejected
+WARNING: level 'level-900': unknown field 'extra_field' is ignored
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _warn_unknown_fields (res://src/logic/level_data.gd:308)
+       [1] _parse (res://src/logic/level_data.gd:148)
+       [2] from_dictionary (res://src/logic/level_data.gd:107)
+       [3] _make_level (res://tests/run_tests.gd:1976)
+       [4] _test_level_data_invalid (res://tests/run_tests.gd:466)
+       [5] _init (res://tests/run_tests.gd:192)
+PASS: an unknown field only warns and is ignored
+PASS: malformed JSON is rejected instead of crashing
+PASS: a malformed-JSON error says the JSON is invalid
+PASS: a JSON array at the top level is rejected
+PASS: a top-level type error names the expected object
+PASS: a JSON level fixture parses
+PASS: a JSON level fixture reads the player start
+PASS: a move record keeps the direction
+PASS: a move record keeps the push flag
+PASS: a move record keeps the box index
+PASS: a move record keeps the previous player cell
+PASS: a move record keeps the previous counters
+PASS: a move record keeps the previous box cells
+PASS: a session starts the player on the start cell
+PASS: a session starts the boxes on their start cells
+PASS: a session starts with zero counters
+PASS: a session starts with an empty undo history
+PASS: stepping into floor returns MOVED
+PASS: an accepted step moves the player one cell
+PASS: a step counts one move and no push
+PASS: a step adds one undo entry
+PASS: a move into a wall returns REJECTED_WALL
+PASS: a rejected wall move does not move the player
+PASS: a rejected wall move does not change counters
+PASS: a rejected move adds no undo entry
+PASS: a rejected move emits move_rejected with the reason
+PASS: pushing a box into free floor returns PUSHED
+PASS: a push moves the player into the box's old cell
+PASS: a push moves the box one cell further
+PASS: a push counts one move and one push
+PASS: a push adds one undo entry
+PASS: moving a box onto floor does not win the level
+PASS: pushing a box into a wall returns REJECTED_BOX
+PASS: a blocked push does not move the player
+PASS: a blocked push does not move the box
+PASS: a blocked push changes no counter
+PASS: a blocked push adds no undo entry
+PASS: pushing a box into another box returns REJECTED_BOX
+PASS: a box-on-box rejection leaves the player in place
+PASS: a box-on-box rejection leaves every box in place
+PASS: a box-on-box rejection changes no counter
+PASS: one hundred accepted moves are counted
+PASS: at least one hundred moves stay reachable by undo
+PASS: the walk cycle ends where it started
+PASS: undo rewinds one hundred accepted moves
+PASS: undo restores the counters
+PASS: undo restores the player position
+PASS: undo empties the history
+PASS: undo on an empty history does nothing
+PASS: the undo history is capped at undo_limit moves
+PASS: the oldest undo entry is discarded at the cap
+PASS: the discarded entry leaves the state after the first move
+PASS: undo accepts a push entry
+PASS: undo of a push restores the previous player cell
+PASS: undo of a push restores the previous box cell
+PASS: undo of a push restores the counters before the push
+PASS: the restart fixture has moved and pushed
+PASS: a new session has zero attempts
+PASS: restart restores the player start
+PASS: restart restores the box start cells
+PASS: restart resets the counters
+PASS: restart empties the undo history
+PASS: restart clears the win state
+PASS: restart counts the attempt
+PASS: a box that is not on the last goal does not win
+PASS: no completion signal fires before every goal is filled
+PASS: pushing the last box onto its goal wins the level
+PASS: winning emits level_completed once
+PASS: the completion stats carry the move count
+PASS: the completion stats carry the push count
+PASS: a move after the win is rejected
+PASS: a move after the win changes no counter
+PASS: the first box reaches its goal
+PASS: a box on one goal does not win while another goal is empty
+PASS: no completion signal fires while a goal is empty
+PASS: filling the last empty goal wins the level
+PASS: the two-goal win emits level_completed once
+PASS: the two-goal win counts eleven moves
+PASS: the two-goal win counts two pushes
+PASS: a box in a non-goal corner is deadlocked
+PASS: a box against one wall only is not deadlocked
+PASS: a box in a corner goal is not deadlocked
+PASS: a box with one wall and one open axis is not deadlocked
+PASS: a box in the open is not deadlocked
+PASS: the box is pushed into the corner
+PASS: a deadlocked push records the box cell
+PASS: a deadlocked push emits deadlock_detected once
+PASS: a box pushed onto a goal emits no deadlock warning
+PASS: level file exists: res://assets/data/levels/level-001.json
+PASS: level file validates: level-001 ()
+PASS: level id matches its file stem: level-001
+PASS: level boxes match goals: level-001
+PASS: level file exists: res://assets/data/levels/level-002.json
+PASS: level file validates: level-002 ()
+PASS: level id matches its file stem: level-002
+PASS: level boxes match goals: level-002
+PASS: level file exists: res://assets/data/levels/level-003.json
+PASS: level file validates: level-003 ()
+PASS: level id matches its file stem: level-003
+PASS: level boxes match goals: level-003
+PASS: level file exists: res://assets/data/levels/level-004.json
+PASS: level file validates: level-004 ()
+PASS: level id matches its file stem: level-004
+PASS: level boxes match goals: level-004
+PASS: level file exists: res://assets/data/levels/level-005.json
+PASS: level file validates: level-005 ()
+PASS: level id matches its file stem: level-005
+PASS: level boxes match goals: level-005
+PASS: level file exists: res://assets/data/levels/level-006.json
+PASS: level file validates: level-006 ()
+PASS: level id matches its file stem: level-006
+PASS: level boxes match goals: level-006
+PASS: level file exists: res://assets/data/levels/level-007.json
+PASS: level file validates: level-007 ()
+PASS: level id matches its file stem: level-007
+PASS: level boxes match goals: level-007
+PASS: level file exists: res://assets/data/levels/level-008.json
+PASS: level file validates: level-008 ()
+PASS: level id matches its file stem: level-008
+PASS: level boxes match goals: level-008
+PASS: level file exists: res://assets/data/levels/level-009.json
+PASS: level file validates: level-009 ()
+PASS: level id matches its file stem: level-009
+PASS: level boxes match goals: level-009
+PASS: level file exists: res://assets/data/levels/level-010.json
+PASS: level file validates: level-010 ()
+PASS: level id matches its file stem: level-010
+PASS: level boxes match goals: level-010
+PASS: level file exists: res://assets/data/levels/level-011.json
+PASS: level file validates: level-011 ()
+PASS: level id matches its file stem: level-011
+PASS: level boxes match goals: level-011
+PASS: level file exists: res://assets/data/levels/level-012.json
+PASS: level file validates: level-012 ()
+PASS: level id matches its file stem: level-012
+PASS: level boxes match goals: level-012
+PASS: level file exists: res://assets/data/levels/level-013.json
+PASS: level file validates: level-013 ()
+PASS: level id matches its file stem: level-013
+PASS: level boxes match goals: level-013
+PASS: level file exists: res://assets/data/levels/level-014.json
+PASS: level file validates: level-014 ()
+PASS: level id matches its file stem: level-014
+PASS: level boxes match goals: level-014
+PASS: level file exists: res://assets/data/levels/level-015.json
+PASS: level file validates: level-015 ()
+PASS: level id matches its file stem: level-015
+PASS: level boxes match goals: level-015
+PASS: level file exists: res://assets/data/levels/level-016.json
+PASS: level file validates: level-016 ()
+PASS: level id matches its file stem: level-016
+PASS: level boxes match goals: level-016
+PASS: level file exists: res://assets/data/levels/level-017.json
+PASS: level file validates: level-017 ()
+PASS: level id matches its file stem: level-017
+PASS: level boxes match goals: level-017
+PASS: level file exists: res://assets/data/levels/level-018.json
+PASS: level file validates: level-018 ()
+PASS: level id matches its file stem: level-018
+PASS: level boxes match goals: level-018
+PASS: level file exists: res://assets/data/levels/level-019.json
+PASS: level file validates: level-019 ()
+PASS: level id matches its file stem: level-019
+PASS: level boxes match goals: level-019
+PASS: level file exists: res://assets/data/levels/level-020.json
+PASS: level file validates: level-020 ()
+PASS: level id matches its file stem: level-020
+PASS: level boxes match goals: level-020
+PASS: level 001 carries the par values from its file
+PASS: level 001 is solvable from its file
+PASS: level 001 is solved within its par moves
+PASS: level 001 is solved within its par pushes
+PASS: the campaign lists twenty level files
+PASS: campaign level validates: level-001 ()
+PASS: campaign level boxes match goals: level-001
+PASS: campaign level has exactly one player: level-001
+PASS: campaign level validates: level-002 ()
+PASS: campaign level boxes match goals: level-002
+PASS: campaign level has exactly one player: level-002
+PASS: campaign level validates: level-003 ()
+PASS: campaign level boxes match goals: level-003
+PASS: campaign level has exactly one player: level-003
+PASS: campaign level validates: level-004 ()
+PASS: campaign level boxes match goals: level-004
+PASS: campaign level has exactly one player: level-004
+PASS: campaign level validates: level-005 ()
+PASS: campaign level boxes match goals: level-005
+PASS: campaign level has exactly one player: level-005
+PASS: campaign level validates: level-006 ()
+PASS: campaign level boxes match goals: level-006
+PASS: campaign level has exactly one player: level-006
+PASS: campaign level 6-20 carries two to four boxes: level-006
+PASS: campaign level 6-20 is a 7x7 to 10x8 room: level-006
+PASS: campaign level validates: level-007 ()
+PASS: campaign level boxes match goals: level-007
+PASS: campaign level has exactly one player: level-007
+PASS: campaign level 6-20 carries two to four boxes: level-007
+PASS: campaign level 6-20 is a 7x7 to 10x8 room: level-007
+PASS: campaign level validates: level-008 ()
+PASS: campaign level boxes match goals: level-008
+PASS: campaign level has exactly one player: level-008
+PASS: campaign level 6-20 carries two to four boxes: level-008
+PASS: campaign level 6-20 is a 7x7 to 10x8 room: level-008
+PASS: campaign level validates: level-009 ()
+PASS: campaign level boxes match goals: level-009
+PASS: campaign level has exactly one player: level-009
+PASS: campaign level 6-20 carries two to four boxes: level-009
+PASS: campaign level 6-20 is a 7x7 to 10x8 room: level-009
+PASS: campaign level validates: level-010 ()
+PASS: campaign level boxes match goals: level-010
+PASS: campaign level has exactly one player: level-010
+PASS: campaign level 6-20 carries two to four boxes: level-010
+PASS: campaign level 6-20 is a 7x7 to 10x8 room: level-010
+PASS: campaign level validates: level-011 ()
+PASS: campaign level boxes match goals: level-011
+PASS: campaign level has exactly one player: level-011
+PASS: campaign level 6-20 carries two to four boxes: level-011
+PASS: campaign level 6-20 is a 7x7 to 10x8 room: level-011
+PASS: campaign level validates: level-012 ()
+PASS: campaign level boxes match goals: level-012
+PASS: campaign level has exactly one player: level-012
+PASS: campaign level 6-20 carries two to four boxes: level-012
+PASS: campaign level 6-20 is a 7x7 to 10x8 room: level-012
+PASS: campaign level validates: level-013 ()
+PASS: campaign level boxes match goals: level-013
+PASS: campaign level has exactly one player: level-013
+PASS: campaign level 6-20 carries two to four boxes: level-013
+PASS: campaign level 6-20 is a 7x7 to 10x8 room: level-013
+PASS: campaign level validates: level-014 ()
+PASS: campaign level boxes match goals: level-014
+PASS: campaign level has exactly one player: level-014
+PASS: campaign level 6-20 carries two to four boxes: level-014
+PASS: campaign level 6-20 is a 7x7 to 10x8 room: level-014
+PASS: campaign level validates: level-015 ()
+PASS: campaign level boxes match goals: level-015
+PASS: campaign level has exactly one player: level-015
+PASS: campaign level 6-20 carries two to four boxes: level-015
+PASS: campaign level 6-20 is a 7x7 to 10x8 room: level-015
+PASS: campaign level validates: level-016 ()
+PASS: campaign level boxes match goals: level-016
+PASS: campaign level has exactly one player: level-016
+PASS: campaign level 6-20 carries two to four boxes: level-016
+PASS: campaign level 6-20 is a 7x7 to 10x8 room: level-016
+PASS: campaign level validates: level-017 ()
+PASS: campaign level boxes match goals: level-017
+PASS: campaign level has exactly one player: level-017
+PASS: campaign level 6-20 carries two to four boxes: level-017
+PASS: campaign level 6-20 is a 7x7 to 10x8 room: level-017
+PASS: campaign level validates: level-018 ()
+PASS: campaign level boxes match goals: level-018
+PASS: campaign level has exactly one player: level-018
+PASS: campaign level 6-20 carries two to four boxes: level-018
+PASS: campaign level 6-20 is a 7x7 to 10x8 room: level-018
+PASS: campaign level validates: level-019 ()
+PASS: campaign level boxes match goals: level-019
+PASS: campaign level has exactly one player: level-019
+PASS: campaign level 6-20 carries two to four boxes: level-019
+PASS: campaign level 6-20 is a 7x7 to 10x8 room: level-019
+PASS: campaign level validates: level-020 ()
+PASS: campaign level boxes match goals: level-020
+PASS: campaign level has exactly one player: level-020
+PASS: campaign level 6-20 carries two to four boxes: level-020
+PASS: campaign level 6-20 is a 7x7 to 10x8 room: level-020
+PASS: campaign level ids are ordered
+PASS: campaign level ids are unique
+PASS: the campaign starts at level-001
+PASS: the campaign ends at level-020
+PASS: cell (0,0) of a 7x7 room is at (-3,0,-3)
+PASS: cell (6,6) of a 7x7 room is at (3,0,3)
+PASS: the centre cell of a 15x15 room is at the origin
+PASS: one cell is exactly one world unit
+PASS: world_to_cell inverts cell_to_world
+PASS: level_centre centres a rectangular room
+PASS: the board places the player on the player start
+PASS: the board builds a player piece
+PASS: the player piece sits on its cell
+PASS: the player capsule is above the floor
+PASS: the board builds a crate for every crate start
+PASS: the crate sits on its cell
+PASS: the crate bottom face is above the floor top face
+PASS: the board builds a goal plate for every goal
+PASS: the goal plate bottom face is above the floor top face
+PASS: the board builds walls from the wall cells
+PASS: each wall carries a darker top cap
+PASS: a 7x7 room has 24 wall cells
+PASS: quarter turn 0 keeps the default yaw
+PASS: one quarter turn adds 90 degrees
+PASS: four quarter turns return to the default yaw
+PASS: a negative quarter turn wraps to 315 degrees
+PASS: a pitch below 30 degrees is clamped
+PASS: the default pitch is inside its limits
+PASS: a pitch above 55 degrees is clamped
+PASS: a zoom step moves the multiplier by one step
+PASS: zoom stops at the lower bound
+PASS: zoom stops at the upper bound
+PASS: the 7x7 room fits inside the camera size bounds
+PASS: a large room clamps at the maximum camera size
+PASS: a tiny room clamps at the minimum camera size
+PASS: the column walk crosses the middle cell
+PASS: the column walk crosses the last row
+PASS: a near wall between the camera and the player is marked for fade
+PASS: every faded cell is a wall cell
+PASS: every faded cell is a wall cell
+PASS: the faded walls are on the camera side of the room
+PASS: a wall behind the player is not faded
+PASS: no targets means no faded walls
+PASS: 7x7 room at yaw 45: the projected room is centred in the view
+PASS: 7x7 room at yaw 45: the whole room height fits the orthographic size
+PASS: 7x7 room at yaw 45: the whole room width fits the orthographic size
+PASS: 7x7 room at yaw 45: every room corner is in front of the camera
+PASS: 7x7 room at yaw 45: the room fills its fill ratio of the view
+PASS: 9x7 room at yaw 45: the projected room is centred in the view
+PASS: 9x7 room at yaw 45: the whole room height fits the orthographic size
+PASS: 9x7 room at yaw 45: the whole room width fits the orthographic size
+PASS: 9x7 room at yaw 45: every room corner is in front of the camera
+PASS: 9x7 room at yaw 45: the room fills its fill ratio of the view
+PASS: 15x15 room at yaw 45: the projected room is centred in the view
+PASS: 15x15 room at yaw 45: the whole room height fits the orthographic size
+PASS: 15x15 room at yaw 45: the whole room width fits the orthographic size
+PASS: 15x15 room at yaw 45: every room corner is in front of the camera
+PASS: 15x15 room at yaw 45: the room fills its fill ratio of the view
+PASS: 7x7 room at yaw 135: the projected room is centred in the view
+PASS: 7x7 room at yaw 135: the whole room height fits the orthographic size
+PASS: 7x7 room at yaw 135: the whole room width fits the orthographic size
+PASS: 7x7 room at yaw 135: every room corner is in front of the camera
+PASS: 7x7 room at yaw 135: the room fills its fill ratio of the view
+PASS: 9x7 room at yaw 135: the projected room is centred in the view
+PASS: 9x7 room at yaw 135: the whole room height fits the orthographic size
+PASS: 9x7 room at yaw 135: the whole room width fits the orthographic size
+PASS: 9x7 room at yaw 135: every room corner is in front of the camera
+PASS: 9x7 room at yaw 135: the room fills its fill ratio of the view
+PASS: 15x15 room at yaw 135: the projected room is centred in the view
+PASS: 15x15 room at yaw 135: the whole room height fits the orthographic size
+PASS: 15x15 room at yaw 135: the whole room width fits the orthographic size
+PASS: 15x15 room at yaw 135: every room corner is in front of the camera
+PASS: 15x15 room at yaw 135: the room fills its fill ratio of the view
+PASS: 7x7 room at yaw 225: the projected room is centred in the view
+PASS: 7x7 room at yaw 225: the whole room height fits the orthographic size
+PASS: 7x7 room at yaw 225: the whole room width fits the orthographic size
+PASS: 7x7 room at yaw 225: every room corner is in front of the camera
+PASS: 7x7 room at yaw 225: the room fills its fill ratio of the view
+PASS: 9x7 room at yaw 225: the projected room is centred in the view
+PASS: 9x7 room at yaw 225: the whole room height fits the orthographic size
+PASS: 9x7 room at yaw 225: the whole room width fits the orthographic size
+PASS: 9x7 room at yaw 225: every room corner is in front of the camera
+PASS: 9x7 room at yaw 225: the room fills its fill ratio of the view
+PASS: 15x15 room at yaw 225: the projected room is centred in the view
+PASS: 15x15 room at yaw 225: the whole room height fits the orthographic size
+PASS: 15x15 room at yaw 225: the whole room width fits the orthographic size
+PASS: 15x15 room at yaw 225: every room corner is in front of the camera
+PASS: 15x15 room at yaw 225: the room fills its fill ratio of the view
+PASS: 7x7 room at yaw 315: the projected room is centred in the view
+PASS: 7x7 room at yaw 315: the whole room height fits the orthographic size
+PASS: 7x7 room at yaw 315: the whole room width fits the orthographic size
+PASS: 7x7 room at yaw 315: every room corner is in front of the camera
+PASS: 7x7 room at yaw 315: the room fills its fill ratio of the view
+PASS: 9x7 room at yaw 315: the projected room is centred in the view
+PASS: 9x7 room at yaw 315: the whole room height fits the orthographic size
+PASS: 9x7 room at yaw 315: the whole room width fits the orthographic size
+PASS: 9x7 room at yaw 315: every room corner is in front of the camera
+PASS: 9x7 room at yaw 315: the room fills its fill ratio of the view
+PASS: 15x15 room at yaw 315: the projected room is centred in the view
+PASS: 15x15 room at yaw 315: the whole room height fits the orthographic size
+PASS: 15x15 room at yaw 315: the whole room width fits the orthographic size
+PASS: 15x15 room at yaw 315: every room corner is in front of the camera
+PASS: 15x15 room at yaw 315: the room fills its fill ratio of the view
+PASS: a 9x7 room is framed larger than a 7x7 room
+PASS: a faded wall keeps some alpha instead of vanishing
+PASS: a faded wall stays semi-transparent
+PASS: a faded wall's top cap stays more opaque than its sides
+PASS: a faded border wall keeps a visible outline in its top cap
+PASS: an opaque wall keeps an opaque cap
+PASS: even a full fade keeps the wall outline
+PASS: the room bounds include the dark base around the border walls
+PASS: the room bounds cover the whole 7x7 room plus the base rim
+PASS: the room bounds reach the bottom of the dark base
+PASS: the room bounds reach the top of the wall cap
+PASS: the board builds a visible floor grid
+PASS: the floor grid carries at least one line
+PASS: the grid line is at most an 8% value step from the floor
+PASS: reduce motion hides the floor grid
+PASS: the grid node is hidden with reduce motion on
+PASS: turning reduce motion off shows the grid again
+PASS: the board builds a visible wall outline group
+PASS: every wall has a top border and four edge strips
+PASS: the wall outline toggle reports off
+PASS: the outline toggle hides every outline
+PASS: the outline toggle shows the outlines again
+PASS: every crate, goal and the player carry one contact shadow group
+PASS: the player carries a contact shadow
+PASS: a crate carries a contact shadow
+PASS: a goal plate carries a contact shadow
+PASS: a contact shadow layer is a soft partial-alpha disc
+PASS: a crate's contact shadow sits below the crate body
+PASS: a crate on a goal lifts its contact shadow back to the floor plane
+PASS: the room carries a dark base
+PASS: the base is 0.05 units thick
+PASS: the base extends past the outer wall faces
+PASS: the move_up action requests an up move
+PASS: the move_down action requests a down move
+PASS: the move_left action requests a left move
+PASS: the move_right action requests a right move
+PASS: a camera action requests no move
+PASS: the pause action requests no move
+PASS: a capture script direction name maps to a move
+PASS: an unknown capture direction is ignored
+PASS: a step through the controller returns MOVED
+PASS: the controller moves the session player
+PASS: a push through the controller returns PUSHED
+PASS: the controller moves the session box
+PASS: the controller counts the moves and pushes
+PASS: undo after a push is accepted
+PASS: undo of a push restores the player and the box cell
+PASS: undo of a push restores the counters
+PASS: a second undo is accepted
+PASS: undo returns the player to the start cell
+PASS: undo on an empty history does nothing
+PASS: the restart fixture has moved and pushed
+PASS: restart resets the counters
+PASS: restart restores the player start cell
+PASS: restart restores the box start cell
+PASS: restart resets the elapsed time
+PASS: restart counts the attempt
+PASS: a move request during a tile tween is ignored
+PASS: an ignored request changes no counter
+PASS: holding a direction moves after the repeat delay
+PASS: holding a direction keeps moving
+PASS: a move into a wall returns REJECTED_WALL
+PASS: a blocked move leaves the state and the counters unchanged
+PASS: the bump feedback ends and clears the busy state
+PASS: the goal plate starts empty
+PASS: the controller completes the level
+PASS: the controller reports one completion
+PASS: the completion payload carries the move count
+PASS: the completion payload carries the push count
+PASS: the completion payload carries the elapsed time
+PASS: the completion payload knows the last level
+PASS: the goal plate lights when a crate lands on it
+PASS: the board tracks the finished crate cell
+PASS: a crate on a goal settles below the plate height
+PASS: a move after the win is rejected
+PASS: a rejected move after the win changes no counter
+PASS: undo is closed after the win
+PASS: the level directory lists every level file
+PASS: the level list starts at level-001
+PASS: the level list ends at level-020
+PASS: level-001 has a next level
+PASS: the last level has no next level
+PASS: next_path returns the following level
+PASS: index_of finds a level path
+PASS: a numeric level argument selects by position
+PASS: a level id selects that level
+PASS: an unknown level argument selects nothing
+PASS: a boot without arguments asks for no level and no screen
+PASS: a boot without arguments leaves reduce motion unset
+PASS: a boot without arguments leaves the setting overrides unset
+PASS: a boot without arguments raises no warning
+PASS: the boot arguments keep the level value
+PASS: the play screen argument resolves to gameplay
+PASS: the lang argument resolves to a locale
+PASS: colorblind=1 turns on the review mode
+PASS: reduce-motion=0 is kept as off
+PASS: the script argument keeps its sequence
+PASS: a complete boot argument set raises no warning
+PASS: a numeric level argument resolves to its position
+PASS: the level argument wins when --level and --screen=play are both given
+PASS: an explicit other screen keeps that screen instead of opening the level
+PASS: the level_select screen name resolves to the level select
+PASS: a level id argument resolves to its position
+PASS: an invalid level argument names no level
+PASS: each unknown or unsupported boot argument raises one warning
+PASS: the unknown-argument warning names the argument
+PASS: an unsupported boot value is ignored
+WARNING: save: no profile at user://test-boot-aids-save.json; starting fresh
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] load_profile (res://src/logic/save_store.gd:75)
+       [1] _test_boot_aids (res://tests/run_tests.gd:1434)
+       [2] _init (res://tests/run_tests.gd:215)
+PASS: the boot-aid fixture writes its profile once
+PASS: the language override reaches the session settings
+PASS: the colorblind override reaches the session settings
+PASS: reduce-motion=0 reaches the session settings
+PASS: the boot overrides leave the stored settings untouched
+PASS: the boot overrides write no save file
+PASS: the parsed script sequence applies without a rejected move
+PASS: the parsed script sequence produces the expected move and push counters
+PASS: the parsed script sequence reaches the expected cells
+PASS: the victory overlay scene exists
+PASS: the victory overlay scene loads
+PASS: the victory overlay is a canvas layer
+PASS: the victory overlay root is named VictoryPanel
+PASS: the victory overlay carries Retry, Next and Level Select
+PASS: the victory overlay carries its stat labels
+PASS: show_result shows the overlay
+PASS: the overlay shows moves against par
+PASS: the overlay shows the elapsed time
+PASS: a par run shows three stars
+PASS: Next is disabled on the last level
+PASS: Retry stays enabled on the last level
+PASS: Level Select stays enabled on the last level
+PASS: a run inside the 1.25 par bound shows two stars
+PASS: Next is enabled when another level follows
+PASS: a slow run shows one star
+PASS: hide_panel hides the overlay
+PASS: zero milliseconds format as 0:00.0
+PASS: the time format keeps a tenth of a second
+PASS: the time format rolls over to minutes
+PASS: the InputMap registers move_up
+PASS: the InputMap registers move_down
+PASS: the InputMap registers move_left
+PASS: the InputMap registers move_right
+PASS: the InputMap registers undo
+PASS: the InputMap registers restart
+PASS: the InputMap registers pause
+PASS: the InputMap registers camera_rotate_left
+PASS: the InputMap registers camera_rotate_right
+PASS: the InputMap registers camera_zoom_in
+PASS: the InputMap registers camera_zoom_out
+PASS: the InputMap registers ui_back
+PASS: there are exactly four direction actions
+PASS: move_up carries its four default bindings
+PASS: move_up binds W
+PASS: move_up binds the up arrow
+PASS: move_up binds the d-pad up
+PASS: undo carries three bindings
+PASS: undo binds Ctrl+Z
+PASS: undo binds the gamepad Y button
+PASS: pause binds Escape
+PASS: pause binds gamepad Start
+PASS: camera_zoom_in binds the mouse wheel up
+PASS: camera_zoom_out binds the mouse wheel down
+PASS: camera_rotate_left binds the left shoulder button
+PASS: register_defaults is idempotent
+PASS: an unknown action has no default binding
+PASS: a par run earns three stars
+PASS: a run under par earns three stars
+PASS: a run inside the 1.25 par bound earns two stars
+PASS: the two-star bound is inclusive
+PASS: a run past the bound earns one star
+PASS: the two-star bound for par 6 is 8 moves
+PASS: the two-star bound for par 24 is 30 moves
+PASS: a zero-move completion against par 0 clamps to three stars
+PASS: zero time formats as 0:00.0
+PASS: sub-second time keeps a tenth
+PASS: 12.6 seconds format as 0:12.6
+PASS: 90 seconds format as 1:30.0
+PASS: an hour rolls into h:mm:ss.t
+PASS: the displayed timer clamps at 99 hours
+PASS: the router boots on the main menu
+PASS: a pause request outside gameplay is refused
+PASS: a refused transition keeps the screen
+PASS: the main menu opens the level select
+PASS: the level select is the current screen
+PASS: back leaves the level select
+PASS: back returns to the main menu
+PASS: the main menu can start gameplay
+PASS: gameplay accepts gameplay input
+PASS: gameplay shows the room
+PASS: gameplay opens the pause menu
+PASS: the pause menu is the current screen
+PASS: pause stops gameplay input
+PASS: pause opens the settings placeholder
+PASS: back leaves settings
+PASS: settings returns to pause
+PASS: pause resumes gameplay
+PASS: resume returns to gameplay
+PASS: gameplay can open the victory panel
+PASS: a pause request on the victory panel is refused
+PASS: victory opens the level select
+PASS: back leaves the level select from victory
+PASS: victory level select returns to the menu
+PASS: the main menu opens credits
+PASS: back leaves credits
+PASS: credits returns to the main menu
+PASS: every accepted transition emits screen_changed
+PASS: the router names the pause screen
+PASS: Play opens the first level when nothing is complete
+PASS: Play opens the first unfinished level
+PASS: Play opens the last level when every level is complete
+PASS: Play has no level when the list is empty
+PASS: the theme body font is at least 16 px
+PASS: the button font is at least 16 px
+PASS: the title font is at least 16 px
+PASS: the theme carries a button focus stylebox
+PASS: the focus ring is at least 2 px wide
+PASS: the focus ring uses the palette focus colour
+PASS: the theme styles the HUD strip
+PASS: the theme styles a screen background
+PASS: the HUD scene loads
+PASS: the HUD is a canvas layer
+PASS: the HUD carries its labels
+PASS: the HUD carries its three buttons
+PASS: the HUD names the level
+PASS: the HUD shows the move count
+PASS: the HUD shows the push count
+PASS: the HUD shows the goal counter
+PASS: the HUD shows the elapsed time
+PASS: Undo is enabled while history exists
+PASS: Undo is disabled with an empty history
+PASS: the HUD Undo button emits undo_requested
+PASS: the HUD Restart button emits restart_requested
+PASS: the HUD Pause button emits pause_requested
+PASS: the level select scene loads
+PASS: the level select is a canvas layer
+PASS: the level select builds one card per level
+PASS: rebuilding the level select replaces the old cards
+PASS: difficulty 1-2 reads Beginner
+PASS: difficulty 5-6 reads Medium
+PASS: difficulty 9-10 reads Expert
+PASS: an out-of-range difficulty clamps
+PASS: a card emits level_selected
+PASS: the level card reports its list index
+PASS: the level select back button emits back_requested
+PASS: the main menu scene loads
+PASS: the main menu is a canvas layer
+PASS: the main menu has five buttons
+PASS: the first main menu button is Play
+PASS: the second main menu button is Level Select
+PASS: the last main menu button is Quit
+PASS: the version label shows v<version>
+PASS: the version label hides without a project version
+PASS: the Play button emits play_requested
+PASS: the pause menu scene loads
+PASS: the pause menu is a canvas layer
+PASS: the pause menu has four buttons
+PASS: the first pause button is Resume
+PASS: the second pause button is Restart
+PASS: the last pause button is Main Menu
+PASS: Resume emits resume_requested
+PASS: Main Menu emits main_menu_requested
+PASS: the confirm modal scene loads
+PASS: the confirm modal is a canvas layer
+PASS: ask opens the confirm modal
+PASS: the modal shows the question
+PASS: cancel closes the modal
+PASS: cancel emits cancelled
+PASS: confirm closes the modal
+PASS: confirm emits confirmed
+PASS: a star row can be created
+PASS: the star row keeps two filled stars
+PASS: the star row reserves room for three marks
+PASS: the star row clamps above three
+PASS: the star row clamps below zero
+PASS: the pause fixture takes one move
+PASS: the controller reports the paused state
+PASS: a move request while paused is ignored
+PASS: a paused move changes no counter
+PASS: undo while paused is refused
+PASS: the timer does not advance while paused
+PASS: unpausing lets the next move through
+WARNING: save: no profile at user://test-save-roundtrip.json; starting fresh
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] load_profile (res://src/logic/save_store.gd:75)
+       [1] _test_save_round_trip (res://tests/run_tests.gd:2092)
+       [2] _test_save_settings_i18n (res://tests/run_tests.gd:2075)
+       [3] _init (res://tests/run_tests.gd:230)
+PASS: a missing profile loads as a new profile
+PASS: a new profile carries the current version
+PASS: the store unlocks the first level
+PASS: the first level reads as unlocked
+PASS: the second level starts locked
+PASS: set_setting returns the stored value
+PASS: the store writes its profile atomically
+PASS: the profile exists after a write
+PASS: an atomic write leaves no temp file behind
+PASS: the first write creates no backup to rotate
+PASS: a second write succeeds
+PASS: a second write keeps the previous profile as .bak
+PASS: an intact profile reloads as OK
+PASS: the settings round-trip through the file
+PASS: a later setting change round-trips too
+PASS: the unlock round-trips through the file
+WARNING: save: adopted the readable profile from user://test-save-roundtrip.json.bak
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] load_profile (res://src/logic/save_store.gd:104)
+       [1] _test_save_round_trip (res://tests/run_tests.gd:2116)
+       [2] _test_save_settings_i18n (res://tests/run_tests.gd:2075)
+       [3] _init (res://tests/run_tests.gd:230)
+PASS: a missing profile adopts the readable backup
+PASS: the adopted backup keeps the unlock
+PASS: an unknown top-level key is preserved
+PASS: lifetime stats are preserved
+PASS: the unknown key is written back after a round trip
+WARNING: save: user://test-save-corrupt.json is corrupt (invalid JSON at line 0); backing it up
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _recover_corrupt (res://src/logic/save_store.gd:449)
+       [1] load_profile (res://src/logic/save_store.gd:84)
+       [2] _test_save_corrupt_recovery (res://tests/run_tests.gd:2163)
+       [3] _test_save_settings_i18n (res://tests/run_tests.gd:2076)
+       [4] _init (res://tests/run_tests.gd:230)
+PASS: a damaged profile reports the corrupt status
+PASS: a damaged profile asks for the corrupt notice
+PASS: a damaged profile is backed up
+PASS: the backup name follows save.corrupt-<ts>.json
+PASS: the backup keeps the damaged bytes
+PASS: a damaged profile falls back to defaults
+PASS: the fallback settings are the defaults
+PASS: the fresh profile left after corruption loads cleanly
+WARNING: save: profile version 2 is newer than 1; starting fresh
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _recover_newer (res://src/logic/save_store.gd:463)
+       [1] load_profile (res://src/logic/save_store.gd:92)
+       [2] _test_save_newer_version (res://tests/run_tests.gd:2194)
+       [3] _test_save_settings_i18n (res://tests/run_tests.gd:2077)
+       [4] _init (res://tests/run_tests.gd:230)
+PASS: a newer profile reports the newer status
+PASS: a newer profile makes the store read-only
+PASS: a newer profile asks for the newer notice
+PASS: a newer profile is copied aside
+PASS: a newer profile's data is not adopted into the fresh one
+WARNING: save: profile is from a newer version; refusing to overwrite user://test-save-newer.json
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] save_now (res://src/logic/save_store.gd:219)
+       [1] _test_save_newer_version (res://tests/run_tests.gd:2201)
+       [2] _test_save_settings_i18n (res://tests/run_tests.gd:2077)
+       [3] _init (res://tests/run_tests.gd:230)
+PASS: a read-only store refuses to write
+PASS: a refused write leaves the newer file untouched
+PASS: an older profile reports the migrated status
+PASS: migration reaches the current version
+PASS: migration keeps a valid stored setting
+PASS: migration keeps a second stored setting
+PASS: migration fills a missing setting with its default
+PASS: the migrated profile is written back
+WARNING: save: no profile at user://test-save-records.json; starting fresh
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] load_profile (res://src/logic/save_store.gd:75)
+       [1] _test_save_unlock_and_records (res://tests/run_tests.gd:2235)
+       [2] _test_save_settings_i18n (res://tests/run_tests.gd:2079)
+       [3] _init (res://tests/run_tests.gd:230)
+PASS: Play starts on the first unlocked level
+PASS: the first completion sets a best record
+PASS: completing a level unlocks the next one
+PASS: the next level is unlocked
+PASS: the level after that stays locked
+PASS: Play moves to the next unfinished level
+PASS: a completed level records completion
+PASS: the record keeps stars and best moves
+PASS: the record keeps the pushes and time of the best run
+PASS: a worse run does not replace the best moves
+PASS: a lower star count does not replace the best stars
+PASS: a better run replaces the best record
+PASS: a higher star count replaces the best stars
+PASS: an equal-move faster run improves the time
+PASS: an equal-move run keeps the higher star count
+PASS: completing the second level unlocks the third
+PASS: Play opens the last level when every level is complete
+PASS: a completion without a level id is ignored
+PASS: the merged record round-trips through the file
+PASS: the unlock chain round-trips through the file
+WARNING: settings: master_volume=5.0 clamped to 1.0
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] clamp_value (res://src/logic/settings_model.gd:81)
+       [1] _test_settings_clamping (res://tests/run_tests.gd:2285)
+       [2] _test_save_settings_i18n (res://tests/run_tests.gd:2080)
+       [3] _init (res://tests/run_tests.gd:230)
+PASS: a volume above the range clamps to 1.0
+WARNING: settings: master_volume=-3.0 clamped to 0.0
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] clamp_value (res://src/logic/settings_model.gd:81)
+       [1] _test_settings_clamping (res://tests/run_tests.gd:2286)
+       [2] _test_save_settings_i18n (res://tests/run_tests.gd:2080)
+       [3] _init (res://tests/run_tests.gd:230)
+PASS: a volume below the range clamps to 0.0
+WARNING: settings: camera_sensitivity=9.0 clamped to 2.0
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] clamp_value (res://src/logic/settings_model.gd:81)
+       [1] _test_settings_clamping (res://tests/run_tests.gd:2287)
+       [2] _test_save_settings_i18n (res://tests/run_tests.gd:2080)
+       [3] _init (res://tests/run_tests.gd:230)
+PASS: camera sensitivity clamps at its maximum
+WARNING: settings: camera_sensitivity=0.1 clamped to 0.5
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] clamp_value (res://src/logic/settings_model.gd:81)
+       [1] _test_settings_clamping (res://tests/run_tests.gd:2288)
+       [2] _test_save_settings_i18n (res://tests/run_tests.gd:2080)
+       [3] _init (res://tests/run_tests.gd:230)
+PASS: camera sensitivity clamps at its minimum
+WARNING: settings: language 'fr' is not supported
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] clamp_value (res://src/logic/settings_model.gd:85)
+       [1] _test_settings_clamping (res://tests/run_tests.gd:2289)
+       [2] _test_save_settings_i18n (res://tests/run_tests.gd:2080)
+       [3] _init (res://tests/run_tests.gd:230)
+PASS: an unsupported language falls back to English
+WARNING: settings: colorblind mode 'rainbow' is not supported
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] clamp_value (res://src/logic/settings_model.gd:90)
+       [1] _test_settings_clamping (res://tests/run_tests.gd:2290)
+       [2] _test_save_settings_i18n (res://tests/run_tests.gd:2080)
+       [3] _init (res://tests/run_tests.gd:230)
+PASS: an unsupported colorblind mode falls back to off
+WARNING: settings: reduce_motion expects a bool, got 4
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] clamp_value (res://src/logic/settings_model.gd:95)
+       [1] _test_settings_clamping (res://tests/run_tests.gd:2291)
+       [2] _test_save_settings_i18n (res://tests/run_tests.gd:2080)
+       [3] _init (res://tests/run_tests.gd:230)
+PASS: a non-bool reduce-motion value falls back to false
+WARNING: settings: master_volume expects a number, got 4
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] clamp_value (res://src/logic/settings_model.gd:76)
+       [1] sanitize (res://src/logic/settings_model.gd:65)
+       [2] _test_settings_clamping (res://tests/run_tests.gd:2292)
+       [3] _test_save_settings_i18n (res://tests/run_tests.gd:2080)
+       [4] _init (res://tests/run_tests.gd:230)
+PASS: sanitize replaces a wrong-type value with its default
+PASS: sanitize keeps a valid value
+PASS: sanitize returns every settings key
+PASS: a half volume maps to a negative dB value
+PASS: full volume maps to 0 dB
+PASS: the fullscreen setting maps to the fullscreen window mode
+PASS: the windowed setting maps to the windowed mode
+PASS: the English table carries every required key
+PASS: both locale tables cover every required key ()
+PASS: a translated key reads from its own locale
+PASS: a key missing from zh falls back to English
+PASS: the main menu scene loads for the locale check
+PASS: switching to zh updates the menu without a restart
+PASS: switching back to en updates the menu in place
+PASS: the level select scene loads for the progress check
+PASS: the level select builds a card per entry
+PASS: a completed card shows its star count
+PASS: a completed card shows its best moves and time
+PASS: a locked card is disabled
+PASS: a locked card says it is locked
+PASS: a locked card hides the level name
+PASS: the real settings screen scene exists
+PASS: the settings screen scene loads
+PASS: the settings screen is a canvas layer
+PASS: the settings screen carries its labels and controls
+PASS: the settings title is translated
+PASS: bind_values shows the stored master volume
+PASS: bind_values shows the stored language
+PASS: the settings screen carries the reduce-motion toggle
+PASS: the settings screen carries the fullscreen toggle
+PASS: both toggles load
+PASS: moving a slider emits its setting key
+PASS: the volume slider emits a 0..1 value
+PASS: choosing a language emits the language setting
+PASS: choosing a colorblind mode emits the mode setting
+PASS: toggling reduce motion emits its setting
+PASS: toggling fullscreen emits its setting
+PASS: the settings title re-translates after a language switch
+PASS: a settings row re-translates after a language switch
+PASS: the board builds colorblind shape markers
+PASS: the shape markers stay hidden while colorblind mode is off
+PASS: the board reports colorblind mode
+PASS: every shape marker becomes visible in colorblind mode
+PASS: the goal, the crate and the player each carry a shape marker
+PASS: turning the mode off hides the markers again
+PASS: camera sensitivity 1 keeps the base tween time
+PASS: camera sensitivity 2 halves the tween time
+PASS: reduce motion makes a camera tween instant
+PASS: a fresh controller allows animation
+PASS: reduce motion disables tile animation
+PASS: the audio director configures seven cues
+PASS: the audio director configures the step cue
+PASS: the audio director configures the push cue
+PASS: the audio director configures the land cue
+PASS: the audio director configures the undo cue
+PASS: the audio director configures the restart cue
+PASS: the audio director configures the win cue
+PASS: the audio director configures the ui_click cue
+PASS: the step cue has duration, waveform, frequency and envelope in range
+PASS: the push cue has duration, waveform, frequency and envelope in range
+PASS: the land cue has duration, waveform, frequency and envelope in range
+PASS: the undo cue has duration, waveform, frequency and envelope in range
+PASS: the restart cue has duration, waveform, frequency and envelope in range
+PASS: the win cue has duration, waveform, frequency and envelope in range
+PASS: the ui_click cue has duration, waveform, frequency and envelope in range
+PASS: the win cue is a rising two-note pair
+PASS: the step cue is a single note
+PASS: the step cue builds its full duration
+PASS: the step cue is audible and peak-normalized
+PASS: the push cue builds its full duration
+PASS: the push cue is audible and peak-normalized
+PASS: the land cue builds its full duration
+PASS: the land cue is audible and peak-normalized
+PASS: the undo cue builds its full duration
+PASS: the undo cue is audible and peak-normalized
+PASS: the restart cue builds its full duration
+PASS: the restart cue is audible and peak-normalized
+PASS: the win cue builds its full duration
+PASS: the win cue is audible and peak-normalized
+PASS: the ui_click cue builds its full duration
+PASS: the ui_click cue is audible and peak-normalized
+PASS: the first step cue is accepted
+PASS: a step repeat inside the minimum interval is dropped
+PASS: a step repeat at the minimum interval is accepted again
+PASS: a different cue is not throttled by the step cue
+PASS: a push repeat inside its own interval is dropped
+PASS: a push repeat at its own interval is accepted again
+PASS: the throttle counts accepted step cues only
+WARNING: audio: unknown cue 'mystery'
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] play_cue (res://src/audio/audio_director.gd:148)
+       [1] _test_audio_throttle (res://tests/run_tests.gd:2636)
+       [2] _test_audio_cues (res://tests/run_tests.gd:2539)
+       [3] _init (res://tests/run_tests.gd:231)
+PASS: an unknown cue is refused instead of crashing
+PASS: a known cue still triggers after an unknown one
+PASS: full volume maps to 0 dB
+PASS: half volume maps to linear_to_db(0.5)
+PASS: zero volume maps to the -80 dB silent floor
+PASS: the SFX bus exists after apply_volumes
+PASS: master 0.8 reaches the Master bus in dB
+PASS: SFX 0.9 reaches the SFX bus in dB
+PASS: a non-zero SFX volume leaves the bus unmuted
+PASS: SFX volume 0 mutes the SFX bus
+PASS: muted SFX still carries the silent dB floor
+PASS: a muted cue still triggers and plays silently
+PASS: an accepted step requests the step cue
+PASS: an accepted push requests the push cue
+PASS: a crate pushed onto a goal requests the land cue
+PASS: completing the level requests the win cue
+PASS: the win cue is requested exactly once
+PASS: an accepted undo requests the undo cue
+PASS: restart requests the restart cue
+PASS: a button press requests the click cue
+PASS: one press requests the click cue exactly once
+PASS: 905 checks passed
+[test] PASS
