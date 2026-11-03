@@ -3,11 +3,13 @@ extends Node3D
 
 ## Isometric camera rig for the 3D room, per design/camera-and-presentation.md.
 ##
-## The rig orbits the level centre on a fixed pitch. `Q` and `E` snap the yaw by
-## a quarter turn, the mouse wheel changes the orthographic zoom inside its
-## bounds, and `update_occlusion()` fades the walls between the camera and the
-## player, a crate or a goal plate. The camera never free-orbits and the pitch is
-## not player-adjustable in 1.0.
+## The rig orbits the level centre on a fixed pitch and frames the room's
+## bounding box, so the whole floor and all four border walls are centred in the
+## viewport at any level size. `Q` and `E` snap the yaw by a quarter turn, the
+## mouse wheel changes the orthographic zoom inside its bounds, and
+## `update_occlusion()` fades the walls between the camera and the player, a
+## crate or a goal plate. The camera never free-orbits and the pitch is not
+## player-adjustable in 1.0.
 
 const LevelDataScript = preload("res://src/logic/level_data.gd")
 const BoardBuilderScript = preload("res://src/game/board_builder.gd")
@@ -34,7 +36,7 @@ const MIN_ASPECT := 0.01
 @export var fill_ratio: float = 0.8
 @export var size_min: float = 6.0
 @export var size_max: float = 18.0
-@export var occlusion_alpha: float = 0.12
+@export var occlusion_alpha: float = 0.22
 @export var occlusion_seconds: float = 0.12
 @export var camera_distance: float = 20.0
 
@@ -59,11 +61,21 @@ func setup(level: LevelDataScript, board: BoardBuilderScript) -> void:
 	_zoom = 1.0
 	position = BoardBuilderScript.level_centre(level)
 	rotation = Vector3(0.0, deg_to_rad(_current_yaw()), 0.0)
-	_fitted_size = _fit_size(_current_yaw())
-	_camera.position = _camera_local_offset()
 	_camera.rotation = Vector3(-deg_to_rad(clamp_pitch_degrees(pitch_degrees)), 0.0, 0.0)
-	_camera.size = _fitted_size
+	_apply_framing(_current_yaw(), false)
 	_camera.current = true
+	update_occlusion()
+
+
+## Selects one of the four snap states without animating. The capture path uses
+## it to screenshot every quarter turn; a normal boot leaves the state at 0.
+func set_quarter_turns(turns: int) -> void:
+	if _level == null or _board == null:
+		return
+	_quarter_turns = posmod(turns, 4)
+	_zoom = 1.0
+	rotation = Vector3(0.0, deg_to_rad(_current_yaw()), 0.0)
+	_apply_framing(_current_yaw(), false)
 	update_occlusion()
 
 
@@ -163,32 +175,82 @@ static func fit_orthogonal_size(
 	size_minimum: float,
 	size_maximum: float
 ) -> float:
-	if corners.is_empty():
-		return size_minimum
-	var yaw := deg_to_rad(yaw_degrees)
-	var pitch := deg_to_rad(clamp_pitch_degrees(pitch_degrees))
-	var offset := Vector3(sin(yaw), 0.0, cos(yaw))
-	var forward := Vector3(
-		-cos(pitch) * offset.x, -sin(pitch), -cos(pitch) * offset.z
+	var framing := frame_room(
+		corners,
+		yaw_degrees,
+		pitch_degrees,
+		aspect,
+		fill_ratio_value,
+		size_minimum,
+		size_maximum,
+		Vector3.ZERO
 	)
-	var right := Vector3(cos(yaw), 0.0, -sin(yaw))
-	var up := right.cross(forward)
-	var min_right := INF
-	var max_right := -INF
-	var min_up := INF
-	var max_up := -INF
-	for corner in corners:
-		var projected_right := corner.dot(right)
-		var projected_up := corner.dot(up)
-		min_right = minf(min_right, projected_right)
-		max_right = maxf(max_right, projected_right)
-		min_up = minf(min_up, projected_up)
-		max_up = maxf(max_up, projected_up)
+	return framing["size"]
+
+
+## View-plane coordinates of `point` for a camera at `camera_local`. `point` uses
+## the room's world axes and `camera_local` is the camera position inside the
+## rig, so the rig yaw is applied here. X runs along the camera's right axis and
+## Y along its up axis.
+static func view_point(
+	point: Vector3, camera_local: Vector3, yaw_degrees: float, pitch_degrees: float
+) -> Vector2:
+	var pitch := deg_to_rad(clamp_pitch_degrees(pitch_degrees))
+	var offset := point.rotated(Vector3.UP, -deg_to_rad(yaw_degrees)) - camera_local
+	return Vector2(offset.x, offset.y * cos(pitch) - offset.z * sin(pitch))
+
+
+## Distance of `point` in front of the camera along the view direction. A
+## positive value means the camera's placement covers the point instead of
+## leaving it behind the near plane.
+static func view_depth(
+	point: Vector3, camera_local: Vector3, yaw_degrees: float, pitch_degrees: float
+) -> float:
+	var pitch := deg_to_rad(clamp_pitch_degrees(pitch_degrees))
+	var offset := point.rotated(Vector3.UP, -deg_to_rad(yaw_degrees)) - camera_local
+	return -offset.y * sin(pitch) - offset.z * cos(pitch)
+
+
+## Camera position inside the rig that brings a view-plane offset to the middle
+## of the viewport. Inverse of `view_point()` for a camera-local offset.
+static func view_offset_to_camera_local(view_offset: Vector2, pitch_degrees: float) -> Vector3:
+	var pitch := deg_to_rad(clamp_pitch_degrees(pitch_degrees))
+	return Vector3(view_offset.x, view_offset.y * cos(pitch), -view_offset.y * sin(pitch))
+
+
+## Frames the room's bounding box in the orthographic view. Returns
+## `{"size": float, "camera_local": Vector3}`: the projection size and the
+## camera position inside the rig that centre the projected room in the viewport
+## and leave `fill_ratio_value` of the limiting axis as margin.
+static func frame_room(
+	room_corners: Array[Vector3],
+	yaw_degrees: float,
+	pitch_degrees: float,
+	aspect: float,
+	fill_ratio_value: float,
+	size_minimum: float,
+	size_maximum: float,
+	base_camera_local: Vector3
+) -> Dictionary:
+	if room_corners.is_empty():
+		return {"size": size_minimum, "camera_local": base_camera_local}
+	var min_view := Vector2(INF, INF)
+	var max_view := Vector2(-INF, -INF)
+	for corner: Vector3 in room_corners:
+		var view := view_point(corner, base_camera_local, yaw_degrees, pitch_degrees)
+		min_view = Vector2(minf(min_view.x, view.x), minf(min_view.y, view.y))
+		max_view = Vector2(maxf(max_view.x, view.x), maxf(max_view.y, view.y))
 	var safe_aspect := maxf(aspect, MIN_ASPECT)
-	var vertical_span := max_up - min_up
-	var horizontal_span := max_right - min_right
+	var horizontal_span := max_view.x - min_view.x
+	var vertical_span := max_view.y - min_view.y
 	var fitted := maxf(vertical_span, horizontal_span / safe_aspect) / maxf(fill_ratio_value, MIN_ASPECT)
-	return clampf(fitted, size_minimum, size_maximum)
+	var view_centre := (min_view + max_view) * 0.5
+	return {
+		"size": clampf(fitted, size_minimum, size_maximum),
+		"camera_local": base_camera_local + view_offset_to_camera_local(
+			view_centre, pitch_degrees
+		),
+	}
 
 
 ## Grid cells crossed by the XZ projection of the segment from `from` to `to`,
@@ -269,11 +331,13 @@ func _start_rotation(direction: int) -> void:
 	if _zoom_tween != null and _zoom_tween.is_valid():
 		_zoom_tween.kill()
 	var target_yaw := _current_yaw()
-	_fitted_size = _fit_size(target_yaw)
-	_camera.size = _fitted_size
+	var camera_local := _apply_framing(target_yaw, true)
 	_rotate_tween = create_tween()
 	_rotate_tween.tween_property(
 		self, "rotation:y", deg_to_rad(target_yaw), rotate_seconds
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_rotate_tween.parallel().tween_property(
+		_camera, "position", camera_local, rotate_seconds
 	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_rotate_tween.finished.connect(_on_rotation_finished)
 
@@ -301,22 +365,39 @@ func _offset_direction(yaw_degrees: float) -> Vector3:
 	return Vector3(sin(yaw), 0.0, cos(yaw))
 
 
-func _fit_size(target_yaw: float) -> float:
-	var half_width := float(_level.columns) * BoardBuilderScript.CELL_SIZE * 0.5
-	var half_depth := float(_level.rows) * BoardBuilderScript.CELL_SIZE * 0.5
-	var corners: Array[Vector3] = []
-	for x in [-half_width, half_width]:
-		for y in [0.0, _board.wall_height]:
-			for z in [-half_depth, half_depth]:
-				corners.append(Vector3(x, y, z))
-	var viewport_size := get_viewport().get_visible_rect().size
-	var aspect := viewport_size.x / maxf(viewport_size.y, 1.0)
-	return fit_orthogonal_size(
-		corners,
+## Places the camera so the room's bounding box is centred in the viewport and
+## fills `fill_ratio` of the limiting axis. Returns the camera position inside
+## the rig so a rotation can tween towards it.
+func _apply_framing(target_yaw: float, animate: bool) -> Vector3:
+	var framing := frame_room(
+		_room_corners(),
 		target_yaw,
-		clamp_pitch_degrees(pitch_degrees),
-		aspect,
+		pitch_degrees,
+		_viewport_aspect(),
 		fill_ratio,
 		size_min,
-		size_max
+		size_max,
+		_camera_local_offset()
 	)
+	_fitted_size = framing["size"]
+	var camera_local: Vector3 = framing["camera_local"]
+	_camera.size = _fitted_size
+	if not animate:
+		_camera.position = camera_local
+	return camera_local
+
+
+## The eight corners of the room's bounding box, relative to the rig position.
+func _room_corners() -> Array[Vector3]:
+	var bounds := _board.room_bounds()
+	var corners: Array[Vector3] = []
+	for x: float in [bounds.position.x, bounds.end.x]:
+		for y: float in [bounds.position.y, bounds.end.y]:
+			for z: float in [bounds.position.z, bounds.end.z]:
+				corners.append(Vector3(x, y, z) - position)
+	return corners
+
+
+func _viewport_aspect() -> float:
+	var viewport_size := get_viewport().get_visible_rect().size
+	return viewport_size.x / maxf(viewport_size.y, 1.0)
