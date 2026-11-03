@@ -45,7 +45,7 @@ The loop is: read the room, plan two or three pushes, execute them, feel the cra
 
 - Every accepted move appends a history entry containing the move direction, whether it was a push, which box moved, and the counters before the move.
 - Undo restores the player position, every box position, `moves` and `pushes` to the values before the last accepted move, and removes that entry. Undo of a rejected move does nothing.
-- Undo is capped by `undo_limit` accepted moves. At the cap, the oldest entries are discarded so the player can rewind at most `undo_limit` moves. The cap does not count rejected moves. `undo_limit` defaults to 100 and accepts 1 to 100; the default equals `GameSession.DEFAULT_UNDO_LIMIT`.
+- Undo is capped by `undo_limit` accepted moves. At the cap, the oldest entries are discarded so the player can rewind at most `undo_limit` moves. The cap does not count rejected moves. The valid range is 1 to 100; the default equals `GameSession.DEFAULT_UNDO_LIMIT` (100).
 - Undo never lowers a best record, never lowers a star rating, and never unlocks a level.
 - Undo while a move tween is running cancels the tween and lands directly on the pre-move state.
 

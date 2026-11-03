@@ -4,7 +4,7 @@ _Owned by the creative director. Every design document must serve this page; a d
 
 ## Vision statement
 
-Sokoban 3D is a calm, turn-based puzzle game for puzzle players 12 and older on desktop and web, with five to thirty minutes to spend. One isometric room, one crate at a time: the player reads the room, plans two or three pushes, and watches the crate settle onto a plate. The game never asks for reflexes, memorization or hidden information, and every mistake is one input away from being undone. The player leaves a session having solved something with their own hands, with the room still quiet around them.
+Sokoban 3D is a calm, turn-based puzzle game for puzzle players 12 and older with five to thirty minutes to spend. One isometric room, one crate at a time: the player reads the room, plans two or three pushes, and watches the crate settle onto a plate. The game never asks for reflexes, memorization or hidden information, and every mistake is one input away from being undone. The player leaves a session having solved something with their own hands, with the room still quiet around them.
 
 ## Pillars
 
@@ -20,7 +20,8 @@ Four promises, each testable in play. A system page names exactly one as its pri
 - Not a time-attack game: P2 is precision without reflexes, so no timer ends a level and speed never decides a star.
 - Not a combat or enemy game: no pillar pays for it.
 - No microtransactions, ads or telemetry: the studio ships a paid, offline, complete product.
-- No external art or audio, and no level editor or online features in 1.0: the asset constraint is part of the design, and neither the editor nor online play serves a pillar.
+- No external art or audio: the asset constraint is part of the design, and every material is procedural.
+- No level editor or online features in 1.0: neither serves a pillar.
 
 ## Session shape
 
