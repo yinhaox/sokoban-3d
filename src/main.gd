@@ -9,10 +9,15 @@ extends Node3D
 ## the gameplay controller and back, persists progress and settings through
 ## `SaveStore`, and shows the confirm modal before a destructive action runs.
 ##
-## The capture aids below only apply to a capture run and change no gameplay
-## path: `--screen=`, `--level=`, `--script=`, `--capture-instant`,
-## `--window=WxH`, `--save=`, `--fresh-save`, `--language=` and `--colorblind=`,
-## so `capture_command` can screenshot each state and each locale.
+## The boot aids below only apply to a startup that names them and change no
+## normal boot or gameplay path: `--level=<id|position>`,
+## `--screen=<menu|level_select|settings|credits|play>`, `--lang=<en|zh>`,
+## `--colorblind=<0|1>`, `--reduce-motion=<0|1>` and `--script=<right,right,up>`,
+## so `capture_command` can screenshot each state and each locale. The
+## `--capture-instant`, `--window=WxH`, `--save=`, `--fresh-save` and
+## `--language=` switches of the earlier capture stories keep working.
+## Setting overrides from these arguments are in memory only; the save file is
+## never written on their behalf.
 
 const LevelDataScript = preload("res://src/logic/level_data.gd")
 const BoardBuilderScript = preload("res://src/game/board_builder.gd")
@@ -44,7 +49,51 @@ const CAPTURE_SAVE_ARG := "--save="
 const CAPTURE_FRESH_SAVE_ARG := "--fresh-save"
 const CAPTURE_LANGUAGE_ARG := "--language="
 const CAPTURE_COLORBLIND_ARG := "--colorblind="
+const CAPTURE_FLAG := "--studio-capture="
+const BOOT_LANG_ARG := "--lang="
+const BOOT_REDUCE_MOTION_ARG := "--reduce-motion="
 const WINDOW_SIZE_SEPARATOR := "x"
+
+## The debug arguments the boot scene understands, mapped to the request key
+## they fill. Every other argument gets one warning line and is ignored.
+const BOOT_ARGUMENT_PREFIXES := {
+	CAPTURE_LEVEL_ARG: "level",
+	CAPTURE_SCREEN_ARG: "screen",
+	BOOT_LANG_ARG: "language",
+	CAPTURE_LANGUAGE_ARG: "language",
+	CAPTURE_COLORBLIND_ARG: "colorblind",
+	BOOT_REDUCE_MOTION_ARG: "reduce_motion",
+	CAPTURE_SCRIPT_ARG: "script",
+}
+
+## Screen names accepted by `--screen=`, with the earlier capture names kept as
+## aliases so old capture commands still boot the same state.
+const BOOT_SCREEN_ALIASES := {
+	"menu": "menu",
+	"main_menu": "menu",
+	"level_select": "level-select",
+	"level-select": "level-select",
+	"settings": "settings",
+	"credits": "credits",
+	"play": "gameplay",
+	"gameplay": "gameplay",
+	"pause": "pause",
+	"victory": "victory",
+	"confirm": "confirm",
+}
+
+## `--colorblind=1` turns on the mode named by the accessibility review in
+## design/accessibility.md; `--colorblind=0` turns every mode off.
+const BOOT_COLORBLIND_ON := "deuteranopia"
+const BOOT_REDUCE_MOTION_OFF := 0
+const BOOT_REDUCE_MOTION_ON := 1
+const BOOT_FLAG_UNSET := -1
+const BOOT_UNKNOWN_WARNING := "main: unknown argument '%s'"
+const BOOT_INVALID_LEVEL_WARNING := "main: --level=%s does not name a level"
+const BOOT_BAD_SCREEN_WARNING := "main: --screen=%s is not a screen"
+const BOOT_BAD_LANGUAGE_WARNING := "main: --lang=%s is not en or zh"
+const BOOT_BAD_COLORBLIND_WARNING := "main: --colorblind=%s is not 0 or 1"
+const BOOT_BAD_REDUCE_MOTION_WARNING := "main: --reduce-motion=%s is not 0 or 1"
 
 const SCREEN_MAIN_MENU := "menu"
 const SCREEN_LEVEL_SELECT := "level-select"
@@ -83,6 +132,8 @@ var _level_paths: Array[String] = []
 var _level_index: int = 0
 var _current_level: LevelDataScript
 var _completed: Dictionary = {}
+var _boot: Dictionary = {}
+var _boot_level_index: int = BOOT_FLAG_UNSET
 var _capture_script: String = ""
 var _instant_capture: bool = false
 var _pending_confirm: int = ConfirmAction.NONE
@@ -98,17 +149,20 @@ func _ready() -> void:
 	router.screen_changed.connect(_on_screen_changed)
 	_level_paths = LevelSequenceScript.level_paths()
 	_wire_signals()
+	_boot = parse_boot_arguments(_cmdline_user_arguments())
+	_report_boot_warnings(_boot)
 	_setup_save_store()
-	_apply_capture_settings()
 	_apply_settings()
 	if get_tree() != null:
 		get_tree().auto_accept_quit = false
-	_capture_script = capture_argument(CAPTURE_SCRIPT_ARG)
+	_capture_script = str(_boot.get("script", ""))
 	_instant_capture = has_capture_argument(CAPTURE_INSTANT_ARG) or not _capture_script.is_empty()
-	_level_index = _requested_level_index()
+	_boot_level_index = resolve_boot_level(_boot, _level_paths)
+	_report_bad_boot_level()
+	_level_index = maxi(_boot_level_index, 0)
 	_apply_window_argument()
 	_apply_screen(router.screen)
-	_apply_capture_screen(capture_argument(CAPTURE_SCREEN_ARG))
+	_apply_boot_screen(str(_boot.get("screen", "")))
 
 
 ## Which screen the player is on, as `ScreenRouter.Screen`.
@@ -196,10 +250,11 @@ func _index_of_level(level_id: String) -> int:
 	return -1
 
 
-## Applies every stored setting to the running game. Called at boot and after
-## every change, so a settings row never needs an Apply button.
+## Applies every stored setting to the running game, with this boot's in-memory
+## overrides on top. Called at boot and after every change, so a settings row
+## never needs an Apply button.
 func _apply_settings() -> void:
-	var settings := save_store.settings()
+	var settings := _effective_settings()
 	Localization.set_locale(str(settings.get(SettingsModelScript.LANGUAGE, "en")))
 	_apply_audio(settings)
 	_apply_fullscreen(settings)
@@ -242,14 +297,11 @@ func _apply_fullscreen(settings: Dictionary) -> void:
 		DisplayServer.window_set_mode(mode)
 
 
-## Applies the optional capture-only overrides before any screen reads them.
-func _apply_capture_settings() -> void:
-	var language := capture_argument(CAPTURE_LANGUAGE_ARG)
-	if SettingsModelScript.LANGUAGES.has(language):
-		save_store.set_setting(SettingsModelScript.LANGUAGE, language)
-	var colorblind := capture_argument(CAPTURE_COLORBLIND_ARG)
-	if SettingsModelScript.COLORBLIND_MODES.has(colorblind):
-		save_store.set_setting(SettingsModelScript.COLORBLIND_MODE, colorblind)
+## The stored settings with this boot's in-memory overrides on top. The
+## overrides are never written through `SaveStore`, so a capture run cannot
+## change the profile.
+func _effective_settings() -> Dictionary:
+	return settings_with_boot_overrides(save_store.settings(), _boot)
 
 
 func _refresh_texts() -> void:
@@ -405,7 +457,7 @@ func _open_level_select() -> void:
 
 
 func _open_settings() -> void:
-	_settings_screen.bind_values(save_store.settings())
+	_settings_screen.bind_values(_effective_settings())
 	_settings_screen.refresh_texts()
 	router.show_settings()
 
@@ -544,11 +596,25 @@ func _on_confirm_cancelled() -> void:
 
 
 ## Stores one setting through the save manager, applies it immediately and shows
-## the clamped value back on the screen.
+## the clamped value back on the screen. A real change wins over a boot override
+## for that key for the rest of the session.
 func _on_setting_requested(key: String, value: Variant) -> void:
+	_clear_boot_override(key)
 	save_store.set_setting(key, value)
 	_apply_settings()
-	_settings_screen.bind_values(save_store.settings())
+	_settings_screen.bind_values(_effective_settings())
+
+
+## Drops the boot override for one setting after the player changes it, so the
+## next `_apply_settings()` shows the stored value instead of the argument.
+func _clear_boot_override(key: String) -> void:
+	match key:
+		SettingsModelScript.LANGUAGE:
+			_boot["language"] = ""
+		SettingsModelScript.COLORBLIND_MODE:
+			_boot["colorblind"] = ""
+		SettingsModelScript.REDUCE_MOTION:
+			_boot["reduce_motion"] = BOOT_FLAG_UNSET
 
 
 func _on_save_failed() -> void:
@@ -583,15 +649,22 @@ func _level_entries() -> Array[Dictionary]:
 	return entries
 
 
-## Boots the state a capture asks for. Only a capture run passes `--screen=`;
-## a normal boot always lands on the main menu.
-func _apply_capture_screen(screen_name: String) -> void:
+## Boots the state the arguments ask for. A normal boot passes no `--screen=` and
+## no valid `--level=`, so it stays on the main menu.
+func _apply_boot_screen(screen_name: String) -> void:
+	if boot_opens_level(screen_name, _boot_level_index):
+		_start_level(_boot_level_index)
+		return
 	match screen_name:
 		SCREEN_MAIN_MENU:
 			router.show_main_menu()
 			_main_menu.focus_default()
 		SCREEN_LEVEL_SELECT:
 			_open_level_select()
+		SCREEN_SETTINGS:
+			_open_settings()
+		SCREEN_CREDITS:
+			_open_credits()
 		SCREEN_GAMEPLAY:
 			_start_level(_level_index)
 		SCREEN_PAUSE:
@@ -601,25 +674,23 @@ func _apply_capture_screen(screen_name: String) -> void:
 			_start_level(_level_index)
 			if router.screen != ScreenRouterScript.Screen.VICTORY:
 				push_warning("main: --screen=victory needs a --script= that solves the level")
-		SCREEN_SETTINGS:
-			_open_settings()
-		SCREEN_CREDITS:
-			_open_credits()
 		SCREEN_CONFIRM:
 			_start_level(_level_index)
 			_request_restart()
 
 
-## The level position requested with `--level=`, or 0.
-func _requested_level_index() -> int:
-	var requested := capture_argument(CAPTURE_LEVEL_ARG)
-	if requested.is_empty():
-		return 0
-	var resolved := resolve_level_argument(requested, _level_paths)
-	if resolved.is_empty():
-		push_warning("main: --level=%s does not name a level; booting the first level" % requested)
-		return 0
-	return maxi(LevelSequenceScript.index_of(_level_paths, resolved), 0)
+## Prints one warning line per argument the boot scene could not use.
+func _report_boot_warnings(parsed: Dictionary) -> void:
+	for message: Variant in parsed.get("warnings", []):
+		push_warning(str(message))
+
+
+## Reports an invalid `--level=` once and falls back to the normal boot screen.
+func _report_bad_boot_level() -> void:
+	var requested := str(_boot.get("level", ""))
+	if _boot_level_index >= 0 or requested.is_empty():
+		return
+	push_warning(BOOT_INVALID_LEVEL_WARNING % requested)
 
 
 ## Resizes the window for a layout capture, e.g. `--window=1280x720`. An invalid
@@ -643,6 +714,15 @@ static func capture_quarter_turns() -> int:
 	return posmod(raw.to_int(), 4)
 
 
+## The user arguments after the engine's `--`, as an untyped array the parser
+## and the tests share.
+static func _cmdline_user_arguments() -> Array:
+	var arguments: Array = []
+	for argument: String in OS.get_cmdline_user_args():
+		arguments.append(argument)
+	return arguments
+
+
 ## Value of `prefix` from the user arguments after the engine's `--`, or an
 ## empty string when that argument is absent.
 static func capture_argument(prefix: String) -> String:
@@ -657,6 +737,152 @@ static func has_capture_argument(flag: String) -> bool:
 		if argument == flag:
 			return true
 	return false
+
+
+## Parses the debug arguments after the engine's `--` into one boot request.
+## The keys are `level`, `screen`, `language`, `colorblind`, `reduce_motion`,
+## `script` and `warnings`. An unsupported argument or value adds one warning
+## line to `warnings` and is ignored; it never stops the boot.
+static func parse_boot_arguments(arguments: Array) -> Dictionary:
+	var parsed := {
+		"level": "",
+		"screen": "",
+		"language": "",
+		"colorblind": "",
+		"reduce_motion": BOOT_FLAG_UNSET,
+		"script": "",
+		"warnings": [],
+	}
+	for argument_value: Variant in arguments:
+		var argument := str(argument_value)
+		if _fill_boot_argument(parsed, argument):
+			continue
+		if not is_known_boot_argument(argument):
+			_add_boot_warning(parsed, BOOT_UNKNOWN_WARNING % argument)
+	return parsed
+
+
+## Fills the request key named by one argument. Returns false when the argument
+## is not a boot argument at all.
+static func _fill_boot_argument(parsed: Dictionary, argument: String) -> bool:
+	for prefix: String in BOOT_ARGUMENT_PREFIXES:
+		if argument.begins_with(prefix):
+			var key := str(BOOT_ARGUMENT_PREFIXES[prefix])
+			_parse_boot_value(parsed, key, argument.substr(prefix.length()))
+			return true
+	return false
+
+
+## Validates one argument value before it reaches the boot request.
+static func _parse_boot_value(parsed: Dictionary, key: String, value: String) -> void:
+	match key:
+		"level":
+			parsed["level"] = value
+		"script":
+			parsed["script"] = value
+		"screen":
+			var screen := str(BOOT_SCREEN_ALIASES.get(value, ""))
+			if screen.is_empty():
+				_add_boot_warning(parsed, BOOT_BAD_SCREEN_WARNING % value)
+			else:
+				parsed["screen"] = screen
+		"language":
+			if SettingsModelScript.LANGUAGES.has(value):
+				parsed["language"] = value
+			else:
+				_add_boot_warning(parsed, BOOT_BAD_LANGUAGE_WARNING % value)
+		"colorblind":
+			var mode := boot_colorblind_mode(value)
+			if mode.is_empty():
+				_add_boot_warning(parsed, BOOT_BAD_COLORBLIND_WARNING % value)
+			else:
+				parsed["colorblind"] = mode
+		"reduce_motion":
+			var flag := boot_bool_flag(value)
+			if flag == BOOT_FLAG_UNSET:
+				_add_boot_warning(parsed, BOOT_BAD_REDUCE_MOTION_WARNING % value)
+			else:
+				parsed["reduce_motion"] = flag
+
+
+## `0` is every colour mode off, `1` is the mode named by the accessibility
+## review, and a full mode name from the earlier capture switch also works.
+static func boot_colorblind_mode(value: String) -> String:
+	match value:
+		"0":
+			return "off"
+		"1":
+			return BOOT_COLORBLIND_ON
+	if SettingsModelScript.COLORBLIND_MODES.has(value):
+		return value
+	return ""
+
+
+## `0` is off and `1` is on; any other value is `BOOT_FLAG_UNSET`.
+static func boot_bool_flag(value: String) -> int:
+	match value:
+		"0":
+			return BOOT_REDUCE_MOTION_OFF
+		"1":
+			return BOOT_REDUCE_MOTION_ON
+	return BOOT_FLAG_UNSET
+
+
+static func _add_boot_warning(parsed: Dictionary, message: String) -> void:
+	(parsed.get("warnings", []) as Array).append(message)
+
+
+## True for every argument this boot scene understands, including the earlier
+## capture switches it still applies. Anything else earns one warning line.
+static func is_known_boot_argument(argument: String) -> bool:
+	if argument == CAPTURE_INSTANT_ARG or argument == CAPTURE_FRESH_SAVE_ARG:
+		return true
+	if argument.begins_with(CAPTURE_FLAG):
+		return true
+	for prefix: String in BOOT_ARGUMENT_PREFIXES:
+		if argument.begins_with(prefix):
+			return true
+	for prefix: String in [CAPTURE_WINDOW_ARG, CAPTURE_SAVE_ARG]:
+		if argument.begins_with(prefix):
+			return true
+	return false
+
+
+## True when the boot opens the level named by `--level=` instead of a screen.
+## `--level` wins over `--screen=play` (both mean gameplay) and over an
+## argument-less boot; an explicit other screen keeps that screen.
+static func boot_opens_level(screen_name: String, level_index: int) -> bool:
+	return level_index >= 0 and (screen_name.is_empty() or screen_name == SCREEN_GAMEPLAY)
+
+
+## The zero-based level index named by `--level=`, or `BOOT_FLAG_UNSET` when the
+## argument is absent or does not name a level.
+static func resolve_boot_level(parsed: Dictionary, paths: Array[String]) -> int:
+	var requested := str(parsed.get("level", ""))
+	if requested.is_empty():
+		return BOOT_FLAG_UNSET
+	var resolved := resolve_level_argument(requested, paths)
+	if resolved.is_empty():
+		return BOOT_FLAG_UNSET
+	return maxi(LevelSequenceScript.index_of(paths, resolved), 0)
+
+
+## The settings for this session: the stored values with the boot overrides on
+## top. The result is a copy, so no caller and no save file is mutated.
+static func settings_with_boot_overrides(
+	base_settings: Dictionary, parsed: Dictionary
+) -> Dictionary:
+	var settings := base_settings.duplicate(true)
+	var language := str(parsed.get("language", ""))
+	if not language.is_empty():
+		settings[SettingsModelScript.LANGUAGE] = language
+	var colorblind := str(parsed.get("colorblind", ""))
+	if not colorblind.is_empty():
+		settings[SettingsModelScript.COLORBLIND_MODE] = colorblind
+	var reduce_motion := int(parsed.get("reduce_motion", BOOT_FLAG_UNSET))
+	if reduce_motion != BOOT_FLAG_UNSET:
+		settings[SettingsModelScript.REDUCE_MOTION] = reduce_motion == BOOT_REDUCE_MOTION_ON
+	return settings
 
 
 ## Resolves `--level=` to a level path: a 1-based position in `paths`, a level id

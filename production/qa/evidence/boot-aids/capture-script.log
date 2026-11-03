@@ -1,0 +1,5 @@
+[capture] target: C:\Users\yinha\.dsh\state\superagent-sokoban\work\boot-aids-8f12e74d1c21\production\qa\evidence\boot-aids\script.png
+[capture] user arguments: --level=001 --script=right,right
+[capture] waiting up to 60s for the PNG
+$ D:/SteamLibrary/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe --path . -- --studio-capture=C:\Users\yinha\.dsh\state\superagent-sokoban\work\boot-aids-8f12e74d1c21\production\qa\evidence\boot-aids\script.png --level=001 --script=right,right
+[capture] OK: C:\Users\yinha\.dsh\state\superagent-sokoban\work\boot-aids-8f12e74d1c21\production\qa\evidence\boot-aids\script.png (42341 bytes)
