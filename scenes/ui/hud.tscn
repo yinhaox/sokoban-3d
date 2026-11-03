@@ -1,0 +1,51 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/hud.gd" id="1_hud"]
+
+[node name="HUD" type="CanvasLayer"]
+layer = 5
+script = ExtResource("1_hud")
+
+[node name="Strip" type="PanelContainer" parent="."]
+theme_type_variation = &"HudStrip"
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 56.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="Strip"]
+theme_type_variation = &"HudMargin"
+
+[node name="Row" type="HBoxContainer" parent="Strip/Margin"]
+
+[node name="LevelLabel" type="Label" parent="Strip/Margin/Row"]
+custom_minimum_size = Vector2(180, 0)
+size_flags_horizontal = 3
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="MovesLabel" type="Label" parent="Strip/Margin/Row"]
+custom_minimum_size = Vector2(104, 0)
+horizontal_alignment = 1
+
+[node name="PushesLabel" type="Label" parent="Strip/Margin/Row"]
+custom_minimum_size = Vector2(104, 0)
+horizontal_alignment = 1
+
+[node name="GoalsLabel" type="Label" parent="Strip/Margin/Row"]
+custom_minimum_size = Vector2(110, 0)
+horizontal_alignment = 1
+
+[node name="TimeLabel" type="Label" parent="Strip/Margin/Row"]
+custom_minimum_size = Vector2(110, 0)
+horizontal_alignment = 1
+
+[node name="Undo" type="Button" parent="Strip/Margin/Row"]
+custom_minimum_size = Vector2(76, 44)
+
+[node name="Restart" type="Button" parent="Strip/Margin/Row"]
+custom_minimum_size = Vector2(92, 44)
+
+[node name="Pause" type="Button" parent="Strip/Margin/Row"]
+custom_minimum_size = Vector2(76, 44)

@@ -1,0 +1,5 @@
+[capture] target: C:\Users\yinha\.dsh\state\superagent-sokoban\work\ui-shell-actions-7730baf5f713\production\qa\evidence\ui-shell\victory-last.png
+[capture] user arguments: --screen=victory --level=3 --script=up,right,up,right,down,left,down,right,right,left,left,left,left,up,up,right,right,right,right
+[capture] waiting up to 60s for the PNG
+$ D:/SteamLibrary/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe --path . -- --studio-capture=C:\Users\yinha\.dsh\state\superagent-sokoban\work\ui-shell-actions-7730baf5f713\production\qa\evidence\ui-shell\victory-last.png --screen=victory --level=3 --script=up,right,up,right,down,left,down,right,right,left,left,left,left,up,up,right,right,right,right
+[capture] OK: C:\Users\yinha\.dsh\state\superagent-sokoban\work\ui-shell-actions-7730baf5f713\production\qa\evidence\ui-shell\victory-last.png (38685 bytes)

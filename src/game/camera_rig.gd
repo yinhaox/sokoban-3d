@@ -5,14 +5,16 @@ extends Node3D
 ##
 ## The rig orbits the level centre on a fixed pitch and frames the room's
 ## bounding box, so the whole floor and all four border walls are centred in the
-## viewport at any level size. `Q` and `E` snap the yaw by a quarter turn, the
-## mouse wheel changes the orthographic zoom inside its bounds, and
-## `update_occlusion()` fades the walls between the camera and the player, a
-## crate or a goal plate. The camera never free-orbits and the pitch is not
-## player-adjustable in 1.0.
+## viewport at any level size. The `camera_rotate_left` / `camera_rotate_right`
+## actions snap the yaw by a quarter turn, the `camera_zoom_in` /
+## `camera_zoom_out` actions (bound to `=`/`-` and the mouse wheel) change the
+## orthographic zoom inside its bounds, and `update_occlusion()` fades the walls
+## between the camera and the player, a crate or a goal plate. The camera never
+## free-orbits and the pitch is not player-adjustable in 1.0.
 
 const LevelDataScript = preload("res://src/logic/level_data.gd")
 const BoardBuilderScript = preload("res://src/game/board_builder.gd")
+const InputActionsScript = preload("res://src/input/input_actions.gd")
 
 ## design/camera-and-presentation.md allows a 30..55 degree pitch; 1.0 fixes 40.
 const PITCH_MIN_DEGREES := 30.0
@@ -300,27 +302,13 @@ static func occluded_wall_cells(
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey:
-		_handle_key(event as InputEventKey)
-	elif event is InputEventMouseButton:
-		_handle_mouse_button(event as InputEventMouseButton)
-
-
-func _handle_key(event: InputEventKey) -> void:
-	if not event.pressed or event.echo:
-		return
-	if event.physical_keycode == KEY_Q:
+	if event.is_action_pressed(InputActionsScript.CAMERA_ROTATE_LEFT):
 		rotate_quarter(-1)
-	elif event.physical_keycode == KEY_E:
+	elif event.is_action_pressed(InputActionsScript.CAMERA_ROTATE_RIGHT):
 		rotate_quarter(1)
-
-
-func _handle_mouse_button(event: InputEventMouseButton) -> void:
-	if not event.pressed:
-		return
-	if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+	elif event.is_action_pressed(InputActionsScript.CAMERA_ZOOM_IN):
 		zoom_by(-1)
-	elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+	elif event.is_action_pressed(InputActionsScript.CAMERA_ZOOM_OUT):
 		zoom_by(1)
 
 

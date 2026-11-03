@@ -107,6 +107,19 @@ func undo_depth() -> int:
 	return _history.size()
 
 
+## Goals that currently hold a box, for the HUD's `filled/total` counter.
+func filled_goal_count() -> int:
+	var filled := 0
+	for goal_cell: Vector2i in level.goals:
+		if _box_index_at(goal_cell) != -1:
+			filled += 1
+	return filled
+
+
+func goal_count() -> int:
+	return level.goals.size()
+
+
 func _reset_board() -> void:
 	player = level.player_start
 	boxes = level.initial_boxes()
@@ -181,10 +194,7 @@ func _check_win() -> void:
 func _all_goals_filled() -> bool:
 	if level.goals.is_empty():
 		return false
-	for goal_cell in level.goals:
-		if _box_index_at(goal_cell) == -1:
-			return false
-	return true
+	return filled_goal_count() == goal_count()
 
 
 func _completion_stats() -> Dictionary:

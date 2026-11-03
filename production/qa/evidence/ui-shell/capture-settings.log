@@ -1,0 +1,5 @@
+[capture] target: C:\Users\yinha\.dsh\state\superagent-sokoban\work\ui-shell-actions-7730baf5f713\production\qa\evidence\ui-shell\settings.png
+[capture] user arguments: --screen=settings
+[capture] waiting up to 60s for the PNG
+$ D:/SteamLibrary/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe --path . -- --studio-capture=C:\Users\yinha\.dsh\state\superagent-sokoban\work\ui-shell-actions-7730baf5f713\production\qa\evidence\ui-shell\settings.png --screen=settings
+[capture] OK: C:\Users\yinha\.dsh\state\superagent-sokoban\work\ui-shell-actions-7730baf5f713\production\qa\evidence\ui-shell\settings.png (19402 bytes)
