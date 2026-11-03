@@ -1,0 +1,4 @@
+[capture] target: .\production\qa\evidence\level-view-3d\level-view-3d-1.png
+[capture] waiting up to 60s for the PNG
+$ godot --path . -- --studio-capture=.\production\qa\evidence\level-view-3d\level-view-3d-1.png
+[capture] OK: .\production\qa\evidence\level-view-3d\level-view-3d-1.png (38062 bytes)
