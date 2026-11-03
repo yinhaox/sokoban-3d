@@ -1,0 +1,23 @@
+{
+  "id": "level-016",
+  "name": "The Vault",
+  "name_key": "level_016_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 7,
+  "par_moves": 39,
+  "par_pushes": 16,
+  "columns": 10,
+  "rows": 8,
+  "tiles": [
+    "##########",
+    "#@_______#",
+    "#_$_$_$_$#",
+    "#________#",
+    "##_#_#_#_#",
+    "#________#",
+    "#_._._._.#",
+    "##########"
+  ],
+  "notes": "A wall of gates protects the far plates; each crate enters through the gap above its column and the last one closes the room.",
+  "schema_version": 1
+}

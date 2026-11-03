@@ -1,0 +1,23 @@
+{
+  "id": "level-018",
+  "name": "Tight Squeeze",
+  "name_key": "level_018_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 8,
+  "par_moves": 50,
+  "par_pushes": 19,
+  "columns": 10,
+  "rows": 8,
+  "tiles": [
+    "##########",
+    "#@_______#",
+    "#_$_$_$_$#",
+    "#________#",
+    "##_#_#_#_#",
+    "#________#",
+    "#._.___..#",
+    "##########"
+  ],
+  "notes": "Four crates in a tight row; each gate column is just wide enough for one crate, so freeing the next crate is the puzzle.",
+  "schema_version": 1
+}

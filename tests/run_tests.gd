@@ -41,7 +41,28 @@ const LEVEL_SELECT_SCENE_PATH := "res://scenes/ui/level_select.tscn"
 const PAUSE_MENU_SCENE_PATH := "res://scenes/ui/pause_menu.tscn"
 const CONFIRM_SCENE_PATH := "res://scenes/ui/confirm_modal.tscn"
 
-const LEVEL_FILES := ["level-001", "level-002", "level-003"]
+const LEVEL_FILES := [
+	"level-001",
+	"level-002",
+	"level-003",
+	"level-004",
+	"level-005",
+	"level-006",
+	"level-007",
+	"level-008",
+	"level-009",
+	"level-010",
+	"level-011",
+	"level-012",
+	"level-013",
+	"level-014",
+	"level-015",
+	"level-016",
+	"level-017",
+	"level-018",
+	"level-019",
+	"level-020",
+]
 const LEVEL_DIRECTORY := "res://assets/data/levels/%s.json"
 
 ## 7x7 room: player at (2,3), one box at (4,3), one goal at (5,1). A straight
@@ -174,6 +195,7 @@ func _init() -> void:
 	_test_deadlock_predicate()
 	_test_deadlock_on_push()
 	_test_level_files()
+	_test_level_manifest()
 	_test_board_builder()
 	_test_camera_rig()
 	_test_camera_framing()
@@ -718,6 +740,56 @@ func _test_level_files() -> void:
 	_check(session.pushes == first.par_pushes, "level 001 is solved within its par pushes")
 
 
+## The campaign manifest: exactly twenty level files, ids unique and ordered,
+## one player, and as many goals as crates in every room. Levels 6 to 20 also
+## stay inside the 7x7..10x8, two-to-four-crate band of this story.
+func _test_level_manifest() -> void:
+	_check(LEVEL_FILES.size() == 20, "the campaign lists twenty level files")
+	var ids: Array[String] = []
+	var seen := {}
+	for index in LEVEL_FILES.size():
+		var file_stem: String = LEVEL_FILES[index]
+		var level := LevelDataClass.from_json_text(_read_level_text(file_stem), file_stem)
+		_check(
+			level.is_valid(),
+			"campaign level validates: %s (%s)" % [file_stem, level.error_summary()]
+		)
+		ids.append(level.id)
+		seen[level.id] = true
+		_check(
+			level.box_starts.size() == level.goals.size(),
+			"campaign level boxes match goals: %s" % file_stem
+		)
+		var players := 0
+		for row_text: String in level.tiles:
+			players += row_text.count("@") + row_text.count("+")
+		_check(players == 1, "campaign level has exactly one player: %s" % file_stem)
+		if index >= 5:
+			_check(
+				level.box_starts.size() >= 2 and level.box_starts.size() <= 4,
+				"campaign level 6-20 carries two to four boxes: %s" % file_stem
+			)
+			_check(
+				level.columns >= 7
+				and level.columns <= 10
+				and level.rows >= 7
+				and level.rows <= 8,
+				"campaign level 6-20 is a 7x7 to 10x8 room: %s" % file_stem
+			)
+	var sorted_ids := ids.duplicate()
+	sorted_ids.sort()
+	_check(ids == sorted_ids, "campaign level ids are ordered")
+	_check(seen.size() == ids.size(), "campaign level ids are unique")
+	_check(
+		not ids.is_empty() and ids[0] == "level-001",
+		"the campaign starts at level-001"
+	)
+	_check(
+		ids.size() == 20 and ids[ids.size() - 1] == "level-020",
+		"the campaign ends at level-020"
+	)
+
+
 func _test_board_builder() -> void:
 	_check(
 		BoardBuilderClass.cell_to_world(Vector2i(0, 0), 7, 7) == Vector3(-3.0, 0.0, -3.0),
@@ -1151,7 +1223,7 @@ func _test_level_sequence() -> void:
 	if paths.size() < 2:
 		return
 	_check(paths[0].ends_with("level-001.json"), "the level list starts at level-001")
-	_check(paths[paths.size() - 1].ends_with("level-003.json"), "the level list ends at level-003")
+	_check(paths[paths.size() - 1].ends_with("level-020.json"), "the level list ends at level-020")
 	_check(LevelSequenceClass.has_next(paths, 0), "level-001 has a next level")
 	_check(
 		not LevelSequenceClass.has_next(paths, paths.size() - 1),

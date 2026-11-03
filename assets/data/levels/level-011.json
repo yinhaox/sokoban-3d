@@ -1,0 +1,23 @@
+{
+  "id": "level-011",
+  "name": "The Gate",
+  "name_key": "level_011_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 5,
+  "par_moves": 35,
+  "par_pushes": 13,
+  "columns": 10,
+  "rows": 8,
+  "tiles": [
+    "##########",
+    "#@_______#",
+    "#_$__$__$#",
+    "#________#",
+    "##_##_##_#",
+    "#________#",
+    "#.___.__.#",
+    "##########"
+  ],
+  "notes": "Each crate leaves through its own gap in the wall; a crate left in a gap blocks the next one.",
+  "schema_version": 1
+}

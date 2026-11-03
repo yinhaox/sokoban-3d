@@ -1,0 +1,23 @@
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+level-001 moves=6 pushes=3 won=true
+level-002 moves=8 pushes=4 won=true
+level-003 moves=13 pushes=7 won=true
+level-004 moves=24 pushes=10 won=true
+level-005 moves=25 pushes=13 won=true
+level-006 moves=33 pushes=15 won=true
+level-007 moves=33 pushes=14 won=true
+level-008 moves=19 pushes=7 won=true
+level-009 moves=26 pushes=15 won=true
+level-010 moves=28 pushes=12 won=true
+level-011 moves=31 pushes=13 won=true
+level-012 moves=51 pushes=24 won=true
+level-013 moves=21 pushes=10 won=true
+level-014 moves=48 pushes=22 won=true
+level-015 moves=38 pushes=16 won=true
+level-016 moves=35 pushes=16 won=true
+level-017 moves=36 pushes=11 won=true
+level-018 moves=45 pushes=19 won=true
+level-019 moves=44 pushes=18 won=true
+level-020 moves=52 pushes=25 won=true
+PASS: 20 levels won

@@ -1,0 +1,23 @@
+{
+  "id": "level-005",
+  "name": "Second Chances",
+  "name_key": "level_005_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 2,
+  "par_moves": 28,
+  "par_pushes": 13,
+  "columns": 10,
+  "rows": 8,
+  "tiles": [
+    "##########",
+    "#______._#",
+    "#_$______#",
+    "#___#____#",
+    "#_$______#",
+    "#_@______#",
+    "#______._#",
+    "##########"
+  ],
+  "notes": "The shortest plan - two straight pushes - leaves no way back around the inner wall. Reset and route each crate to its plate in the right order.",
+  "schema_version": 1
+}

@@ -1,0 +1,6 @@
+[capture] removed stale file: C:\Users\yinha\.dsh\state\superagent-sokoban\work\levels-010-020-3b173eb7abd7\production\qa\evidence\level-content-20\level-010.png
+[capture] target: C:\Users\yinha\.dsh\state\superagent-sokoban\work\levels-010-020-3b173eb7abd7\production\qa\evidence\level-content-20\level-010.png
+[capture] user arguments: --screen=gameplay --level=level-010
+[capture] waiting up to 60s for the PNG
+$ D:/SteamLibrary/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe --path . -- --studio-capture=C:\Users\yinha\.dsh\state\superagent-sokoban\work\levels-010-020-3b173eb7abd7\production\qa\evidence\level-content-20\level-010.png --screen=gameplay --level=level-010
+[capture] OK: C:\Users\yinha\.dsh\state\superagent-sokoban\work\levels-010-020-3b173eb7abd7\production\qa\evidence\level-content-20\level-010.png (57719 bytes)

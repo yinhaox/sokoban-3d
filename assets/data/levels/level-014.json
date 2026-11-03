@@ -1,0 +1,23 @@
+{
+  "id": "level-014",
+  "name": "Goal Line",
+  "name_key": "level_014_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 6,
+  "par_moves": 53,
+  "par_pushes": 22,
+  "columns": 10,
+  "rows": 8,
+  "tiles": [
+    "##########",
+    "#____#___#",
+    "#_$__#__.#",
+    "#_$_____.#",
+    "#_$__#__.#",
+    "#____#___#",
+    "#@___#___#",
+    "##########"
+  ],
+  "notes": "Plates line the far wall. Every crate leaves through the single gap, and the fill order decides the remaining space.",
+  "schema_version": 1
+}
