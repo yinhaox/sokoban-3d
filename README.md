@@ -14,6 +14,12 @@ move at a time, with undo, unlimited retries and no timer against you.
 
 Version 0.1.0.
 
+![Main menu](docs/screenshots/menu.png)
+
+| Level 10, three crates | Settings, Chinese |
+|---|---|
+| ![Level 10](docs/screenshots/level-10.png) | ![Settings in Chinese](docs/screenshots/settings-zh.png) |
+
 ## Controls
 
 | Action | Keyboard | Gamepad |
