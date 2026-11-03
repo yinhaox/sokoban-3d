@@ -1,0 +1,23 @@
+{
+  "id": "level-009",
+  "name": "Switchback",
+  "name_key": "level_009_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 4,
+  "par_moves": 29,
+  "par_pushes": 15,
+  "columns": 10,
+  "rows": 8,
+  "tiles": [
+    "##########",
+    "#_______.#",
+    "#_$______#",
+    "#_@_#____#",
+    "#_$______#",
+    "#___#____#",
+    "#_______.#",
+    "##########"
+  ],
+  "notes": "Alternate push axes through the L-shaped room; each turn costs a walk around the crate.",
+  "schema_version": 1
+}

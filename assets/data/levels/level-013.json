@@ -1,0 +1,23 @@
+{
+  "id": "level-013",
+  "name": "Long Haul",
+  "name_key": "level_013_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 6,
+  "par_moves": 24,
+  "par_pushes": 10,
+  "columns": 10,
+  "rows": 8,
+  "tiles": [
+    "##########",
+    "#_.______#",
+    "#_$____$_#",
+    "#@_______#",
+    "#___##__.#",
+    "#_$______#",
+    "#______._#",
+    "##########"
+  ],
+  "notes": "Long straight pushes with the pillars leaving no room to turn around; plan each approach before the first push.",
+  "schema_version": 1
+}
