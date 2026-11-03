@@ -1,0 +1,4 @@
+[capture] target: C:\Users\yinha\.dsh\state\superagent-sokoban\work\fix-room-framing-a25174f04f11\production\qa\evidence\camera-framing\before.png
+[capture] waiting up to 60s for the PNG
+$ D:/SteamLibrary/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe --path . -- --studio-capture=C:\Users\yinha\.dsh\state\superagent-sokoban\work\fix-room-framing-a25174f04f11\production\qa\evidence\camera-framing\before.png
+[capture] OK: C:\Users\yinha\.dsh\state\superagent-sokoban\work\fix-room-framing-a25174f04f11\production\qa\evidence\camera-framing\before.png (38062 bytes)

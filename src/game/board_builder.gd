@@ -36,6 +36,9 @@ const CROSS_ARM_WIDTH_RATIO := 0.12
 const RING_INNER_RADIUS := 0.22
 const RING_OUTER_RADIUS := 0.30
 const PLATE_SIZE_RATIO := 0.90
+## Alpha a faded wall's top cap keeps, so a faded border wall still draws an
+## outline instead of disappearing (issue #9).
+const OCCLUSION_CAP_ALPHA := 0.55
 
 @export var wall_height: float = 1.0
 @export var floor_thickness: float = 0.1
@@ -169,9 +172,34 @@ func cell_centre(cell: Vector2i) -> Vector3:
 	return cell_to_world(cell, _columns, _rows)
 
 
+## Axis-aligned bound of the whole room in this node's local space: the outer
+## faces of the border walls, from the underside of the floor slab to the top of
+## the wall cap. The camera rig frames this box.
+func room_bounds() -> AABB:
+	var half_width := float(_columns) * CELL_SIZE * 0.5
+	var half_depth := float(_rows) * CELL_SIZE * 0.5
+	var top := wall_height + CAP_HEIGHT
+	return AABB(
+		Vector3(-half_width, -floor_thickness, -half_depth),
+		Vector3(half_width * 2.0, top + floor_thickness, half_depth * 2.0)
+	)
+
+
+## Alpha of a wall's side faces while it is faded.
+static func fade_side_alpha(alpha: float) -> float:
+	return clampf(alpha, 0.0, 1.0)
+
+
+## Alpha of a faded wall's top cap: the same fade as the sides, but never below
+## `OCCLUSION_CAP_ALPHA`, so a faded border wall keeps its outline.
+static func fade_cap_alpha(alpha: float) -> float:
+	return clampf(maxf(alpha, OCCLUSION_CAP_ALPHA), 0.0, 1.0)
+
+
 ## Fades the given wall cells to `alpha` and restores every other wall. The fade
 ## uses the per-wall transparent material variant, so a faded wall casts no
-## shadow and cannot block a target cell.
+## shadow and cannot block a target cell. The top cap keeps
+## `OCCLUSION_CAP_ALPHA`, so a faded border wall still draws its outline.
 func apply_wall_fade(occluded_cells: Array[Vector2i], alpha: float, seconds: float) -> void:
 	var wanted := {}
 	for cell in occluded_cells:
@@ -202,12 +230,14 @@ func _fade_wall(cell: Vector2i, should_fade: bool, alpha: float, seconds: float)
 		cap.material_override = top_material
 		_set_shadow_casting(side, false)
 		_set_shadow_casting(cap, false)
+		var side_alpha := fade_side_alpha(alpha)
+		var cap_alpha := fade_cap_alpha(alpha)
 		var fade := create_tween().set_parallel(true)
 		fade.tween_method(
-			_set_material_alpha.bind(side_material), side_material.albedo_color.a, alpha, seconds
+			_set_material_alpha.bind(side_material), side_material.albedo_color.a, side_alpha, seconds
 		)
 		fade.tween_method(
-			_set_material_alpha.bind(top_material), top_material.albedo_color.a, alpha, seconds
+			_set_material_alpha.bind(top_material), top_material.albedo_color.a, cap_alpha, seconds
 		)
 		_wall_tweens[cell] = fade
 		return
