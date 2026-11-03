@@ -994,17 +994,32 @@ func _test_wall_fade_outline() -> void:
 	var faded_cap := BoardBuilderClass.fade_cap_alpha(0.22)
 	_check(faded_side > 0.0, "a faded wall keeps some alpha instead of vanishing")
 	_check(faded_side < 0.5, "a faded wall stays semi-transparent")
-	_check(faded_cap > faded_side, "a faded wall's top cap stays more opaque than its sides")
-	_check(
-		faded_cap >= 0.3 and faded_cap < 1.0,
-		"a faded border wall keeps a visible outline in its top cap"
-	)
-	_check(BoardBuilderClass.fade_cap_alpha(1.0) == 1.0, "an opaque wall keeps an opaque cap")
-	_check(BoardBuilderClass.fade_cap_alpha(0.0) > 0.0, "even a full fade keeps the wall outline")
+	_check(faded_cap >= faded_side, "a faded wall's top cap is at least as opaque as its sides")
+	_check(faded_side <= 0.25, "a faded wall's sides stay at or below 25% opacity")
+	_check(faded_cap <= 0.25, "a faded wall's top cap stays at or below 25% opacity")
+	_check(BoardBuilderClass.fade_cap_alpha(1.0) <= 0.25, "the faded top cap never becomes opaque")
+	_check(BoardBuilderClass.fade_cap_alpha(0.0) == 0.0, "a zero fade draws no top face")
 
 	var level := _make_level(BASIC_TILES)
 	var board := BoardBuilderClass.new()
 	board.build(level)
+	# Every wall keeps a full-cell top face, so a faded wall cannot show the hollow
+	# inside of its box as a dark hole (issue #30).
+	var top_faces := 0
+	for cell: Vector2i in board.wall_cells():
+		var cap := board.get_node_or_null("WallTop_%d_%d" % [cell.x, cell.y]) as MeshInstance3D
+		if cap != null and cap.mesh != null:
+			var cap_bounds := cap.mesh.get_aabb()
+			if (
+				cap_bounds.size.x >= BoardBuilderClass.CELL_SIZE - BoardBuilderClass.CAP_OVERLAP
+				and cap_bounds.size.z >= BoardBuilderClass.CELL_SIZE - BoardBuilderClass.CAP_OVERLAP
+			):
+				top_faces += 1
+	_check(top_faces == board.wall_cells().size(), "every wall keeps a full-cell top face")
+	_check(
+		board.wall_top_face_count() == board.wall_cells().size(),
+		"the board reports one top face per wall cell"
+	)
 	var bounds := board.room_bounds()
 	var margin: float = board.room_base_margin
 	_check(
@@ -1051,14 +1066,25 @@ func _test_visual_polish() -> void:
 	_check(grid != null and not grid.visible, "the grid node is hidden with reduce motion on")
 	board.set_reduce_motion(false)
 	_check(board.is_floor_grid_visible(), "turning reduce motion off shows the grid again")
+	_check(
+		_grid_lines_stay_on_empty_floor(board, level),
+		"the grid draws only on empty floor, never under a wall or a crate"
+	)
 
-	# Wall outline: built for every wall, with a visibility toggle.
+	# Wall outline: one merged contour per wall-segment boundary run, so a
+	# continuous wall never draws a line between its own 1x1 blocks (issue #30).
 	var outlines := board.get_node_or_null("WallOutlines") as Node3D
 	_check(outlines != null and outlines.visible, "the board builds a visible wall outline group")
+	_check(board.wall_outline_count() > 0, "the wall outline group carries contour lines")
 	_check(
-		board.wall_outline_count() == board.wall_cells().size() * 8,
-		"every wall has a top border and four edge strips"
+		board.wall_outline_count() < board.wall_cells().size(),
+		"the merged wall outline has fewer lines than the room has wall blocks"
 	)
+	if board.has_method("wall_outline_runs_follow_boundary"):
+		_check(
+			board.wall_outline_runs_follow_boundary(),
+			"every outline line sits on a wall edge instead of inside a wall segment"
+		)
 	board.set_wall_outlines_enabled(false)
 	_check(not board.wall_outlines_enabled(), "the wall outline toggle reports off")
 	_check(outlines != null and not outlines.visible, "the outline toggle hides every outline")
@@ -1110,6 +1136,43 @@ func _test_visual_polish() -> void:
 			"the base extends past the outer wall faces"
 		)
 	board.free()
+
+
+## True when every floor-grid line lies on a boundary between two floor cells and
+## no line overlaps a crate's footprint. The grid is geometry, so this is checked
+## on the built nodes instead of on a helper the grid code would provide.
+func _grid_lines_stay_on_empty_floor(board: BoardBuilderClass, level: LevelDataClass) -> bool:
+	var grid := board.get_node_or_null("FloorGrid") as Node3D
+	if grid == null:
+		return false
+	for child in grid.get_children():
+		var line := child as MeshInstance3D
+		if line == null:
+			return false
+		var mesh := line.mesh as BoxMesh
+		if mesh == null:
+			return false
+		var centre := line.position
+		var probes: Array[Vector3] = []
+		if mesh.size.x > mesh.size.z:
+			probes = [centre + Vector3(0.0, 0.0, -0.25), centre + Vector3(0.0, 0.0, 0.25)]
+		else:
+			probes = [centre + Vector3(-0.25, 0.0, 0.0), centre + Vector3(0.25, 0.0, 0.0)]
+		for probe in probes:
+			var cell := BoardBuilderClass.world_to_cell(probe, level.columns, level.rows)
+			if level.cell_at(cell) == LevelDataClass.Cell.WALL:
+				return false
+		for crate_cell: Vector2i in level.box_starts:
+			var crate_centre := BoardBuilderClass.cell_to_world(
+				crate_cell, level.columns, level.rows
+			)
+			var delta := centre - crate_centre
+			if (
+				absf(delta.x) < board.crate_size * 0.5 + mesh.size.x * 0.5
+				and absf(delta.z) < board.crate_size * 0.5 + mesh.size.z * 0.5
+			):
+				return false
+	return true
 
 
 func _test_gameplay_input_mapping() -> void:
