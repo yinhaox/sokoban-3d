@@ -11,8 +11,8 @@ extends CanvasLayer
 signal confirmed
 signal cancelled
 
-const CANCEL_TEXT := "Cancel"
-const CONFIRM_TEXT := "Confirm"
+const CANCEL_KEY := "ui_common_cancel"
+const CONFIRM_KEY := "ui_common_confirm"
 const BUTTON_MIN_SIZE := Vector2(140, UiTheme.MIN_TARGET_PX)
 
 var _question: Label
@@ -25,6 +25,17 @@ var _bound: bool = false
 func _ready() -> void:
 	_bind()
 	visible = false
+
+
+## Re-reads the button labels from the active locale. The question is set by the
+## caller from a translation key, so a language switch never changes an open
+## question under the player.
+func refresh_texts() -> void:
+	_bind()
+	if not _bound:
+		return
+	_cancel.text = tr(CANCEL_KEY)
+	_confirm.text = tr(CONFIRM_KEY)
 
 
 ## Opens the modal with one question. Cancel takes the focus so the safe answer
@@ -63,6 +74,7 @@ func confirm() -> void:
 
 
 func _bind() -> void:
+	Localization.install()
 	if _bound:
 		return
 	_bound = true
@@ -78,11 +90,10 @@ func _bind() -> void:
 	if _question == null or _cancel == null or _confirm == null:
 		push_error("confirm_modal: the question or buttons are missing")
 		return
-	_cancel.text = CANCEL_TEXT
-	_confirm.text = CONFIRM_TEXT
 	_cancel.custom_minimum_size = BUTTON_MIN_SIZE
 	_confirm.custom_minimum_size = BUTTON_MIN_SIZE
 	var controls: Array[Control] = [_cancel, _confirm]
 	UiFocus.wire_horizontal(controls)
 	_cancel.pressed.connect(cancel)
 	_confirm.pressed.connect(confirm)
+	refresh_texts()

@@ -11,19 +11,21 @@ extends CanvasLayer
 ##
 ## Labels reserve a fixed width and only rewrite their text, so a counter
 ## going from 9 to 10 does not reflow the strip and the numbers do not flicker.
+## Every label is read through `tr()`; `refresh_texts()` re-renders the last
+## payload after a language switch.
 
 signal undo_requested
 signal restart_requested
 signal pause_requested
 
-const TEXT_MOVES := "Moves: %d"
-const TEXT_PUSHES := "Pushes: %d"
-const TEXT_GOALS := "Goals: %d/%d"
-const TEXT_TIME := "Time: %s"
-const TEXT_UNDO := "Undo"
-const TEXT_RESTART := "Restart"
-const TEXT_PAUSE := "Pause"
-const TEXT_LEVEL := "Level %d: %s"
+const MOVES_KEY := "ui_hud_moves"
+const PUSHES_KEY := "ui_hud_pushes"
+const GOALS_KEY := "ui_hud_goals"
+const TIME_KEY := "ui_hud_time"
+const LEVEL_KEY := "ui_hud_level"
+const UNDO_KEY := "ui_hud_undo"
+const RESTART_KEY := "ui_hud_restart"
+const PAUSE_KEY := "ui_hud_pause"
 
 var _level_label: Label
 var _moves_label: Label
@@ -33,45 +35,78 @@ var _time_label: Label
 var _undo: Button
 var _restart: Button
 var _pause: Button
+var _level_number: int = 0
+var _level_name: String = ""
+var _stats: Dictionary = {}
+var _elapsed_ms: int = 0
 var _bound: bool = false
 
 
 func _ready() -> void:
 	_bind()
-	set_attempt_stats({})
+	_render_stats()
 
 
 ## Names the level in the strip, e.g. `Level 1: First Push`.
 func set_level(level_number: int, level_name: String) -> void:
 	_bind()
-	if _level_label == null:
-		return
-	_level_label.text = TEXT_LEVEL % [level_number, level_name]
+	_level_number = level_number
+	_level_name = level_name
+	_render_level()
 
 
 ## Rewrites the counters from one gameplay payload. Missing keys read as zero,
 ## so the strip is valid before the first level is loaded.
 func set_attempt_stats(stats: Dictionary) -> void:
 	_bind()
-	if _moves_label == null:
-		return
-	_moves_label.text = TEXT_MOVES % int(stats.get("moves", 0))
-	_pushes_label.text = TEXT_PUSHES % int(stats.get("pushes", 0))
-	_goals_label.text = TEXT_GOALS % [
-		int(stats.get("goals_filled", 0)), int(stats.get("goals_total", 0))
-	]
-	_undo.disabled = not bool(stats.get("can_undo", false))
-	set_elapsed_ms(int(stats.get("elapsed_ms", 0)))
+	_stats = stats.duplicate()
+	_render_stats()
 
 
 func set_elapsed_ms(milliseconds: int) -> void:
 	_bind()
+	_elapsed_ms = milliseconds
+	_render_time()
+
+
+## Re-reads every label from the active locale and re-renders the last payload.
+func refresh_texts() -> void:
+	_bind()
+	if not _bound:
+		return
+	_undo.text = tr(UNDO_KEY)
+	_restart.text = tr(RESTART_KEY)
+	_pause.text = tr(PAUSE_KEY)
+	_render_level()
+	_render_stats()
+
+
+func _render_level() -> void:
+	if _level_label == null:
+		return
+	_level_label.text = tr(LEVEL_KEY) % [_level_number, _level_name]
+
+
+func _render_stats() -> void:
+	if _moves_label == null:
+		return
+	_moves_label.text = tr(MOVES_KEY) % int(_stats.get("moves", 0))
+	_pushes_label.text = tr(PUSHES_KEY) % int(_stats.get("pushes", 0))
+	_goals_label.text = tr(GOALS_KEY) % [
+		int(_stats.get("goals_filled", 0)), int(_stats.get("goals_total", 0))
+	]
+	_undo.disabled = not bool(_stats.get("can_undo", false))
+	set_elapsed_ms(int(_stats.get("elapsed_ms", _elapsed_ms)))
+
+
+func _render_time() -> void:
 	if _time_label == null:
 		return
-	_time_label.text = TEXT_TIME % UiFormat.elapsed_ms(milliseconds)
+	_time_label.text = tr(TIME_KEY) % UiFormat.elapsed_ms(_elapsed_ms)
 
 
 func _bind() -> void:
+	Localization.install()
 	if _bound:
 		return
 	_bound = true
@@ -86,9 +121,7 @@ func _bind() -> void:
 	if _moves_label == null or _undo == null:
 		push_error("hud: the HUD strip is missing its labels or buttons")
 		return
-	_undo.text = TEXT_UNDO
-	_restart.text = TEXT_RESTART
-	_pause.text = TEXT_PAUSE
+	refresh_texts()
 	_undo.pressed.connect(_on_undo_pressed)
 	_restart.pressed.connect(_on_restart_pressed)
 	_pause.pressed.connect(_on_pause_pressed)

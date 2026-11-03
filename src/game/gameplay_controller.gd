@@ -45,6 +45,9 @@ const BUMP_OUT_RATIO := 0.4
 @export var repeat_interval_seconds: float = 0.10
 @export var undo_repeat_interval_seconds: float = 0.08
 @export var animation_enabled: bool = true
+## Settings hook: reduce motion turns every tile tween, the bump feedback and the
+## victory delay into an instant state change, per design/accessibility.md.
+@export var reduce_motion: bool = false
 
 ## The attempt being played. Read-only for callers; the controller is the only
 ## owner of the session and applies every mutation through its own methods.
@@ -169,6 +172,12 @@ func elapsed_ms() -> int:
 
 func is_busy() -> bool:
 	return _busy
+
+
+## True when a move may animate. Reduce motion or a headless/instant-capture
+## setup makes the state change land in the same frame.
+func motion_enabled() -> bool:
+	return animation_enabled and not reduce_motion
 
 
 ## The counters the HUD shows for the current attempt, so the UI reads one
@@ -444,7 +453,7 @@ func _schedule_victory() -> void:
 	if _victory_scheduled or _victory_payload.is_empty():
 		return
 	_victory_scheduled = true
-	if win_delay_seconds > 0.0 and animation_enabled and is_inside_tree():
+	if win_delay_seconds > 0.0 and motion_enabled() and is_inside_tree():
 		var timer: SceneTreeTimer = get_tree().create_timer(win_delay_seconds)
 		timer.timeout.connect(_emit_victory)
 		return
@@ -467,4 +476,4 @@ func _kill_tween() -> void:
 
 
 func _can_animate() -> bool:
-	return animation_enabled and is_inside_tree()
+	return motion_enabled() and is_inside_tree()
