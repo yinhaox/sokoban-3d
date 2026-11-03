@@ -1,10 +1,16 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://src/main.gd" id="1_main"]
 [ext_resource type="Script" path="res://src/game/board_builder.gd" id="2_board"]
 [ext_resource type="Script" path="res://src/game/camera_rig.gd" id="3_camera"]
 [ext_resource type="Script" path="res://src/game/gameplay_controller.gd" id="4_gameplay"]
 [ext_resource type="PackedScene" path="res://scenes/ui/victory_panel.tscn" id="5_victory"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="6_hud"]
+[ext_resource type="PackedScene" path="res://scenes/ui/main_menu.tscn" id="7_menu"]
+[ext_resource type="PackedScene" path="res://scenes/ui/level_select.tscn" id="8_select"]
+[ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="9_pause"]
+[ext_resource type="PackedScene" path="res://scenes/ui/confirm_modal.tscn" id="10_confirm"]
+[ext_resource type="PackedScene" path="res://scenes/ui/info_panel.tscn" id="11_info"]
 
 [sub_resource type="Environment" id="Environment_main"]
 background_mode = 1
@@ -43,4 +49,18 @@ size = 9.0
 [node name="Gameplay" type="Node3D" parent="."]
 script = ExtResource("4_gameplay")
 
+[node name="HUD" parent="." instance=ExtResource("6_hud")]
+
 [node name="VictoryPanel" parent="." instance=ExtResource("5_victory")]
+
+[node name="MainMenu" parent="." instance=ExtResource("7_menu")]
+
+[node name="LevelSelect" parent="." instance=ExtResource("8_select")]
+
+[node name="PauseMenu" parent="." instance=ExtResource("9_pause")]
+
+[node name="ConfirmModal" parent="." instance=ExtResource("10_confirm")]
+
+[node name="SettingsPanel" parent="." instance=ExtResource("11_info")]
+
+[node name="CreditsPanel" parent="." instance=ExtResource("11_info")]

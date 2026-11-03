@@ -1,21 +1,13 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://src/ui/victory_panel.gd" id="1_panel"]
+[ext_resource type="Script" path="res://src/ui/star_row.gd" id="2_stars"]
 
 [node name="VictoryPanel" type="CanvasLayer"]
 layer = 10
 script = ExtResource("1_panel")
 
-[node name="Dim" type="ColorRect" parent="."]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-color = Color(0.0627451, 0.0745098, 0.101961, 0.55)
-
-[node name="Center" type="CenterContainer" parent="."]
+[node name="Root" type="Control" parent="."]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -23,40 +15,62 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Panel" type="PanelContainer" parent="Center"]
-custom_minimum_size = Vector2(360, 0)
+[node name="Dim" type="PanelContainer" parent="Root"]
+theme_type_variation = &"DimBackground"
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
-[node name="Margin" type="MarginContainer" parent="Center/Panel"]
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 20
+[node name="Center" type="CenterContainer" parent="Root"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
-[node name="Content" type="VBoxContainer" parent="Center/Panel/Margin"]
-theme_override_constants/separation = 12
+[node name="Panel" type="PanelContainer" parent="Root/Center"]
+theme_type_variation = &"ModalPanel"
+custom_minimum_size = Vector2(440, 0)
 
-[node name="Title" type="Label" parent="Center/Panel/Margin/Content"]
-autowrap_mode = 2
+[node name="Content" type="VBoxContainer" parent="Root/Center/Panel"]
+
+[node name="Title" type="Label" parent="Root/Center/Panel/Content"]
+theme_type_variation = &"HeadingLabel"
 horizontal_alignment = 1
 
-[node name="Moves" type="Label" parent="Center/Panel/Margin/Content"]
-autowrap_mode = 2
+[node name="Stars" type="Control" parent="Root/Center/Panel/Content"]
+custom_minimum_size = Vector2(164, 44)
+size_flags_horizontal = 4
+script = ExtResource("2_stars")
+
+[node name="StarsLabel" type="Label" parent="Root/Center/Panel/Content"]
+theme_type_variation = &"MutedLabel"
 horizontal_alignment = 1
 
-[node name="Pushes" type="Label" parent="Center/Panel/Margin/Content"]
-autowrap_mode = 2
+[node name="Moves" type="Label" parent="Root/Center/Panel/Content"]
 horizontal_alignment = 1
 
-[node name="Time" type="Label" parent="Center/Panel/Margin/Content"]
-autowrap_mode = 2
+[node name="Pushes" type="Label" parent="Root/Center/Panel/Content"]
 horizontal_alignment = 1
 
-[node name="Buttons" type="HBoxContainer" parent="Center/Panel/Margin/Content"]
-theme_override_constants/separation = 16
+[node name="Time" type="Label" parent="Root/Center/Panel/Content"]
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="Root/Center/Panel/Content"]
+custom_minimum_size = Vector2(0, 8)
+
+[node name="Buttons" type="HBoxContainer" parent="Root/Center/Panel/Content"]
 alignment = 1
 
-[node name="Retry" type="Button" parent="Center/Panel/Margin/Content/Buttons"]
-custom_minimum_size = Vector2(120, 44)
+[node name="Retry" type="Button" parent="Root/Center/Panel/Content/Buttons"]
+custom_minimum_size = Vector2(130, 44)
 
-[node name="Next" type="Button" parent="Center/Panel/Margin/Content/Buttons"]
-custom_minimum_size = Vector2(120, 44)
+[node name="Next" type="Button" parent="Root/Center/Panel/Content/Buttons"]
+custom_minimum_size = Vector2(130, 44)
+
+[node name="LevelSelect" type="Button" parent="Root/Center/Panel/Content/Buttons"]
+custom_minimum_size = Vector2(160, 44)

@@ -1,0 +1,5 @@
+[capture] target: .\production\qa\evidence\ui-shell\credits.png
+[capture] user arguments: --screen=credits
+[capture] waiting up to 60s for the PNG
+$ godot --path . -- --studio-capture=.\production\qa\evidence\ui-shell\credits.png --screen=credits
+[capture] OK: .\production\qa\evidence\ui-shell\credits.png (22647 bytes)

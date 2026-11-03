@@ -21,8 +21,25 @@ const CameraRigClass = preload("res://src/game/camera_rig.gd")
 const GameplayControllerClass = preload("res://src/game/gameplay_controller.gd")
 const LevelSequenceClass = preload("res://src/game/level_sequence.gd")
 const VictoryPanelClass = preload("res://src/ui/victory_panel.gd")
+const InputActionsClass = preload("res://src/input/input_actions.gd")
+const ScreenRouterClass = preload("res://src/ui/screen_router.gd")
+const LevelProgressClass = preload("res://src/logic/level_progress.gd")
+const StarRatingClass = preload("res://src/logic/star_rating.gd")
+const UiFormatClass = preload("res://src/ui/ui_format.gd")
+const UiThemeClass = preload("res://src/ui/ui_theme.gd")
+const MainMenuClass = preload("res://src/ui/main_menu.gd")
+const LevelSelectClass = preload("res://src/ui/level_select.gd")
+const HudClass = preload("res://src/ui/hud.gd")
+const PauseMenuClass = preload("res://src/ui/pause_menu.gd")
+const ConfirmModalClass = preload("res://src/ui/confirm_modal.gd")
+const StarRowClass = preload("res://src/ui/star_row.gd")
 
 const VICTORY_SCENE_PATH := "res://scenes/ui/victory_panel.tscn"
+const HUD_SCENE_PATH := "res://scenes/ui/hud.tscn"
+const MAIN_MENU_SCENE_PATH := "res://scenes/ui/main_menu.tscn"
+const LEVEL_SELECT_SCENE_PATH := "res://scenes/ui/level_select.tscn"
+const PAUSE_MENU_SCENE_PATH := "res://scenes/ui/pause_menu.tscn"
+const CONFIRM_SCENE_PATH := "res://scenes/ui/confirm_modal.tscn"
 
 const LEVEL_FILES := ["level-001", "level-002", "level-003"]
 const LEVEL_DIRECTORY := "res://assets/data/levels/%s.json"
@@ -136,6 +153,7 @@ var _rejected_reasons: Array[int] = []
 var _deadlock_cells: Array[Vector2i] = []
 var _completed_stats: Array[Dictionary] = []
 var _victory_events: Array[Dictionary] = []
+var _ui_signal_flags: Dictionary = {}
 
 
 func _init() -> void:
@@ -165,6 +183,19 @@ func _init() -> void:
 	_test_gameplay_win()
 	_test_level_sequence()
 	_test_victory_panel()
+	_test_input_actions()
+	_test_star_rating()
+	_test_ui_format()
+	_test_screen_router()
+	_test_level_progress()
+	_test_ui_theme()
+	_test_hud()
+	_test_level_select()
+	_test_main_menu()
+	_test_pause_menu()
+	_test_confirm_modal()
+	_test_star_row()
+	_test_gameplay_pause_blocks_input()
 
 	if _failed == 0:
 		print("PASS: %d checks passed" % _passed)
@@ -226,6 +257,16 @@ func _test_main_scene() -> void:
 		root.get_node_or_null("VictoryPanel") is CanvasLayer,
 		"main scene carries the victory overlay"
 	)
+	for screen_name: String in ["HUD", "MainMenu", "LevelSelect", "PauseMenu", "ConfirmModal"]:
+		_check(
+			root.get_node_or_null(screen_name) is CanvasLayer,
+			"main scene carries the %s screen" % screen_name
+		)
+	_check(
+		root.get_node_or_null("SettingsPanel") is CanvasLayer,
+		"main scene carries the settings placeholder"
+	)
+	_check(root.get_node_or_null("CreditsPanel") is CanvasLayer, "main scene carries the credits screen")
 	root.free()
 
 	var level := MAIN_SCRIPT.load_level_file("res://assets/data/levels/level-001.json")
@@ -903,44 +944,34 @@ func _test_wall_fade_outline() -> void:
 
 func _test_gameplay_input_mapping() -> void:
 	_check(
-		GameplayControllerClass.direction_for_key(KEY_UP) == GameSessionClass.Direction.UP,
-		"the up arrow requests an up move"
+		GameplayControllerClass.direction_for_action(InputActionsClass.MOVE_UP)
+		== GameSessionClass.Direction.UP,
+		"the move_up action requests an up move"
 	)
 	_check(
-		GameplayControllerClass.direction_for_key(KEY_W) == GameSessionClass.Direction.UP,
-		"W requests an up move"
+		GameplayControllerClass.direction_for_action(InputActionsClass.MOVE_DOWN)
+		== GameSessionClass.Direction.DOWN,
+		"the move_down action requests a down move"
 	)
 	_check(
-		GameplayControllerClass.direction_for_key(KEY_DOWN) == GameSessionClass.Direction.DOWN,
-		"the down arrow requests a down move"
+		GameplayControllerClass.direction_for_action(InputActionsClass.MOVE_LEFT)
+		== GameSessionClass.Direction.LEFT,
+		"the move_left action requests a left move"
 	)
 	_check(
-		GameplayControllerClass.direction_for_key(KEY_S) == GameSessionClass.Direction.DOWN,
-		"S requests a down move"
+		GameplayControllerClass.direction_for_action(InputActionsClass.MOVE_RIGHT)
+		== GameSessionClass.Direction.RIGHT,
+		"the move_right action requests a right move"
 	)
 	_check(
-		GameplayControllerClass.direction_for_key(KEY_LEFT) == GameSessionClass.Direction.LEFT,
-		"the left arrow requests a left move"
+		GameplayControllerClass.direction_for_action(InputActionsClass.CAMERA_ROTATE_LEFT)
+		== GameplayControllerClass.MOVE_IGNORED,
+		"a camera action requests no move"
 	)
 	_check(
-		GameplayControllerClass.direction_for_key(KEY_A) == GameSessionClass.Direction.LEFT,
-		"A requests a left move"
-	)
-	_check(
-		GameplayControllerClass.direction_for_key(KEY_RIGHT) == GameSessionClass.Direction.RIGHT,
-		"the right arrow requests a right move"
-	)
-	_check(
-		GameplayControllerClass.direction_for_key(KEY_D) == GameSessionClass.Direction.RIGHT,
-		"D requests a right move"
-	)
-	_check(
-		GameplayControllerClass.direction_for_key(KEY_Q) == GameplayControllerClass.MOVE_IGNORED,
-		"Q stays a camera key and requests no move"
-	)
-	_check(
-		GameplayControllerClass.direction_for_key(KEY_E) == GameplayControllerClass.MOVE_IGNORED,
-		"E stays a camera key and requests no move"
+		GameplayControllerClass.direction_for_action(InputActionsClass.PAUSE)
+		== GameplayControllerClass.MOVE_IGNORED,
+		"the pause action requests no move"
 	)
 	_check(
 		GameplayControllerClass.direction_for_name(" right ") == GameSessionClass.Direction.RIGHT,
@@ -1151,25 +1182,35 @@ func _test_victory_panel() -> void:
 	var panel := packed.instantiate()
 	_check(panel is CanvasLayer, "the victory overlay is a canvas layer")
 	_check(str(panel.name) == "VictoryPanel", "the victory overlay root is named VictoryPanel")
-	var retry := panel.get_node_or_null("Center/Panel/Margin/Content/Buttons/Retry") as Button
-	var next := panel.get_node_or_null("Center/Panel/Margin/Content/Buttons/Next") as Button
-	var moves_label := panel.get_node_or_null("Center/Panel/Margin/Content/Moves") as Label
-	var time_label := panel.get_node_or_null("Center/Panel/Margin/Content/Time") as Label
+	var retry := panel.get_node_or_null("Root/Center/Panel/Content/Buttons/Retry") as Button
+	var next := panel.get_node_or_null("Root/Center/Panel/Content/Buttons/Next") as Button
+	var level_select := panel.get_node_or_null("Root/Center/Panel/Content/Buttons/LevelSelect") as Button
+	var moves_label := panel.get_node_or_null("Root/Center/Panel/Content/Moves") as Label
+	var time_label := panel.get_node_or_null("Root/Center/Panel/Content/Time") as Label
 	_check(
-		retry != null and next != null and moves_label != null and time_label != null,
-		"the victory overlay carries its labels and buttons"
+		retry != null and next != null and level_select != null,
+		"the victory overlay carries Retry, Next and Level Select"
 	)
-	if retry == null or next == null or moves_label == null or time_label == null:
+	_check(
+		moves_label != null and time_label != null,
+		"the victory overlay carries its stat labels"
+	)
+	if retry == null or next == null or level_select == null or moves_label == null or time_label == null:
 		panel.free()
 		return
-	panel.show_result({"moves": 6, "pushes": 3, "elapsed_ms": 12600}, false)
+	panel.show_result({"moves": 6, "pushes": 3, "elapsed_ms": 12600, "par_moves": 6}, false)
 	_check(panel.visible, "show_result shows the overlay")
-	_check(moves_label.text.contains("6"), "the overlay shows the move count")
+	_check(moves_label.text.contains("6") and moves_label.text.contains("par 6"), "the overlay shows moves against par")
 	_check(time_label.text.contains("0:12.6"), "the overlay shows the elapsed time")
-	_check(next.disabled, "Next is disabled on the last level")
+	_check(panel.stars_shown() == 3, "a par run shows three stars")
+	_check(panel.next_enabled() == false, "Next is disabled on the last level")
 	_check(not retry.disabled, "Retry stays enabled on the last level")
-	panel.show_result({"moves": 1, "pushes": 0, "elapsed_ms": 0}, true)
-	_check(not next.disabled, "Next is enabled when another level follows")
+	_check(not level_select.disabled, "Level Select stays enabled on the last level")
+	panel.show_result({"moves": 8, "pushes": 3, "elapsed_ms": 0, "par_moves": 6}, true)
+	_check(panel.stars_shown() == 2, "a run inside the 1.25 par bound shows two stars")
+	_check(panel.next_enabled(), "Next is enabled when another level follows")
+	panel.show_result({"moves": 60, "pushes": 3, "elapsed_ms": 0, "par_moves": 6}, false)
+	_check(panel.stars_shown() == 1, "a slow run shows one star")
 	panel.hide_panel()
 	_check(not panel.visible, "hide_panel hides the overlay")
 	panel.free()
@@ -1182,6 +1223,420 @@ func _test_victory_panel() -> void:
 		VictoryPanelClass.format_elapsed_ms(90000) == "1:30.0",
 		"the time format rolls over to minutes"
 	)
+
+
+func _test_input_actions() -> void:
+	InputActionsClass.register_defaults()
+	for action: String in InputActionsClass.GAMEPLAY_ACTIONS:
+		_check(InputMap.has_action(action), "the InputMap registers %s" % action)
+	_check(InputMap.has_action(InputActionsClass.UI_BACK), "the InputMap registers ui_back")
+	_check(InputActionsClass.DIRECTION_ACTIONS.size() == 4, "there are exactly four direction actions")
+
+	var move_events := InputMap.action_get_events(InputActionsClass.MOVE_UP)
+	_check(move_events.size() == 4, "move_up carries its four default bindings")
+	_check(_has_key_event(move_events, KEY_W), "move_up binds W")
+	_check(_has_key_event(move_events, KEY_UP), "move_up binds the up arrow")
+	_check(_has_joy_button_event(move_events, JOY_BUTTON_DPAD_UP), "move_up binds the d-pad up")
+
+	var undo_events := InputMap.action_get_events(InputActionsClass.UNDO)
+	_check(undo_events.size() == 3, "undo carries three bindings")
+	_check(_has_ctrl_key_event(undo_events, KEY_Z), "undo binds Ctrl+Z")
+	_check(_has_joy_button_event(undo_events, JOY_BUTTON_Y), "undo binds the gamepad Y button")
+
+	var pause_events := InputMap.action_get_events(InputActionsClass.PAUSE)
+	_check(_has_key_event(pause_events, KEY_ESCAPE), "pause binds Escape")
+	_check(_has_joy_button_event(pause_events, JOY_BUTTON_START), "pause binds gamepad Start")
+
+	var zoom_in_events := InputMap.action_get_events(InputActionsClass.CAMERA_ZOOM_IN)
+	_check(
+		_has_mouse_wheel_event(zoom_in_events, MOUSE_BUTTON_WHEEL_UP),
+		"camera_zoom_in binds the mouse wheel up"
+	)
+	_check(
+		_has_mouse_wheel_event(
+			InputMap.action_get_events(InputActionsClass.CAMERA_ZOOM_OUT), MOUSE_BUTTON_WHEEL_DOWN
+		),
+		"camera_zoom_out binds the mouse wheel down"
+	)
+	var rotate_events := InputMap.action_get_events(InputActionsClass.CAMERA_ROTATE_LEFT)
+	_check(
+		_has_joy_button_event(rotate_events, JOY_BUTTON_LEFT_SHOULDER),
+		"camera_rotate_left binds the left shoulder button"
+	)
+	var before := InputMap.action_get_events(InputActionsClass.MOVE_UP).size()
+	InputActionsClass.register_defaults()
+	_check(
+		InputMap.action_get_events(InputActionsClass.MOVE_UP).size() == before,
+		"register_defaults is idempotent"
+	)
+	_check(
+		InputActionsClass.default_events("not_an_action").is_empty(),
+		"an unknown action has no default binding"
+	)
+
+
+func _test_star_rating() -> void:
+	_check(StarRatingClass.stars_for_moves(6, 6) == 3, "a par run earns three stars")
+	_check(StarRatingClass.stars_for_moves(5, 6) == 3, "a run under par earns three stars")
+	_check(StarRatingClass.stars_for_moves(7, 6) == 2, "a run inside the 1.25 par bound earns two stars")
+	_check(StarRatingClass.stars_for_moves(8, 6) == 2, "the two-star bound is inclusive")
+	_check(StarRatingClass.stars_for_moves(9, 6) == 1, "a run past the bound earns one star")
+	_check(StarRatingClass.star_2_bound(6) == 8, "the two-star bound for par 6 is 8 moves")
+	_check(StarRatingClass.star_2_bound(24) == 30, "the two-star bound for par 24 is 30 moves")
+	_check(
+		StarRatingClass.stars_for_moves(0, 0) == 3,
+		"a zero-move completion against par 0 clamps to three stars"
+	)
+
+
+func _test_ui_format() -> void:
+	_check(UiFormatClass.elapsed_ms(0) == "0:00.0", "zero time formats as 0:00.0")
+	_check(UiFormatClass.elapsed_ms(999) == "0:00.9", "sub-second time keeps a tenth")
+	_check(UiFormatClass.elapsed_ms(12600) == "0:12.6", "12.6 seconds format as 0:12.6")
+	_check(UiFormatClass.elapsed_ms(90000) == "1:30.0", "90 seconds format as 1:30.0")
+	_check(UiFormatClass.elapsed_ms(3600000) == "1:00:00.0", "an hour rolls into h:mm:ss.t")
+	_check(
+		UiFormatClass.elapsed_ms(360000000) == "99:59:59.9",
+		"the displayed timer clamps at 99 hours"
+	)
+
+
+func _test_screen_router() -> void:
+	var router := ScreenRouterClass.new()
+	var transitions: Array = []
+	router.screen_changed.connect(
+		func(from_screen: int, to_screen: int) -> void:
+			transitions.append([from_screen, to_screen])
+	)
+	_check(router.screen == ScreenRouterClass.Screen.MAIN_MENU, "the router boots on the main menu")
+	_check(not router.pause_game(), "a pause request outside gameplay is refused")
+	_check(router.screen == ScreenRouterClass.Screen.MAIN_MENU, "a refused transition keeps the screen")
+
+	_check(router.show_level_select(), "the main menu opens the level select")
+	_check(router.screen == ScreenRouterClass.Screen.LEVEL_SELECT, "the level select is the current screen")
+	_check(router.back(), "back leaves the level select")
+	_check(router.screen == ScreenRouterClass.Screen.MAIN_MENU, "back returns to the main menu")
+
+	_check(router.start_gameplay(), "the main menu can start gameplay")
+	_check(router.accepts_gameplay_input(), "gameplay accepts gameplay input")
+	_check(router.shows_room(), "gameplay shows the room")
+	_check(router.pause_game(), "gameplay opens the pause menu")
+	_check(router.screen == ScreenRouterClass.Screen.PAUSE, "the pause menu is the current screen")
+	_check(not router.accepts_gameplay_input(), "pause stops gameplay input")
+	_check(router.show_settings(), "pause opens the settings placeholder")
+	_check(router.back(), "back leaves settings")
+	_check(router.screen == ScreenRouterClass.Screen.PAUSE, "settings returns to pause")
+	_check(router.resume_game(), "pause resumes gameplay")
+	_check(router.screen == ScreenRouterClass.Screen.GAMEPLAY, "resume returns to gameplay")
+
+	_check(router.show_victory(), "gameplay can open the victory panel")
+	_check(not router.pause_game(), "a pause request on the victory panel is refused")
+	_check(router.show_level_select(), "victory opens the level select")
+	_check(router.back(), "back leaves the level select from victory")
+	_check(router.screen == ScreenRouterClass.Screen.MAIN_MENU, "victory level select returns to the menu")
+	_check(router.show_credits(), "the main menu opens credits")
+	_check(router.back(), "back leaves credits")
+	_check(router.screen == ScreenRouterClass.Screen.MAIN_MENU, "credits returns to the main menu")
+	_check(transitions.size() >= 10, "every accepted transition emits screen_changed")
+	_check(
+		ScreenRouterClass.screen_name(ScreenRouterClass.Screen.PAUSE) == "pause",
+		"the router names the pause screen"
+	)
+
+
+func _test_level_progress() -> void:
+	var paths: Array[String] = ["level-001", "level-002", "level-003"]
+	_check(
+		LevelProgressClass.next_level_index(paths, {}) == 0,
+		"Play opens the first level when nothing is complete"
+	)
+	_check(
+		LevelProgressClass.next_level_index(paths, {"level-001": true}) == 1,
+		"Play opens the first unfinished level"
+	)
+	_check(
+		LevelProgressClass.next_level_index(
+			paths, {"level-001": true, "level-002": true, "level-003": true}
+		) == 2,
+		"Play opens the last level when every level is complete"
+	)
+	var empty: Array[String] = []
+	_check(
+		LevelProgressClass.next_level_index(empty, {}) == LevelProgressClass.NO_LEVEL,
+		"Play has no level when the list is empty"
+	)
+
+
+func _test_ui_theme() -> void:
+	var theme := UiThemeClass.build()
+	_check(theme.default_font_size >= 16, "the theme body font is at least 16 px")
+	_check(theme.get_font_size("font_size", "Button") >= 16, "the button font is at least 16 px")
+	_check(theme.get_font_size("font_size", "TitleLabel") >= 16, "the title font is at least 16 px")
+	var focus := theme.get_stylebox("focus", "Button") as StyleBoxFlat
+	_check(focus != null, "the theme carries a button focus stylebox")
+	if focus != null:
+		_check(focus.border_width_top >= 2, "the focus ring is at least 2 px wide")
+		_check(focus.border_color == UiThemeClass.FOCUS, "the focus ring uses the palette focus colour")
+	_check(
+		theme.get_stylebox("panel", "HudStrip") != null,
+		"the theme styles the HUD strip"
+	)
+	_check(
+		theme.get_stylebox("panel", "ScreenBackground") != null,
+		"the theme styles a screen background"
+	)
+
+
+func _test_hud() -> void:
+	var packed := load(HUD_SCENE_PATH) as PackedScene
+	_check(packed != null, "the HUD scene loads")
+	if packed == null:
+		return
+	var hud := packed.instantiate()
+	_check(hud is CanvasLayer, "the HUD is a canvas layer")
+	hud.set_level(1, "First Push")
+	var level_label := hud.get_node_or_null("Strip/Margin/Row/LevelLabel") as Label
+	var moves_label := hud.get_node_or_null("Strip/Margin/Row/MovesLabel") as Label
+	var pushes_label := hud.get_node_or_null("Strip/Margin/Row/PushesLabel") as Label
+	var goals_label := hud.get_node_or_null("Strip/Margin/Row/GoalsLabel") as Label
+	var time_label := hud.get_node_or_null("Strip/Margin/Row/TimeLabel") as Label
+	var undo := hud.get_node_or_null("Strip/Margin/Row/Undo") as Button
+	var restart := hud.get_node_or_null("Strip/Margin/Row/Restart") as Button
+	var pause := hud.get_node_or_null("Strip/Margin/Row/Pause") as Button
+	_check(
+		level_label != null and moves_label != null and pushes_label != null,
+		"the HUD carries its labels"
+	)
+	_check(undo != null and restart != null and pause != null, "the HUD carries its three buttons")
+	if moves_label == null or undo == null or restart == null or pause == null:
+		hud.free()
+		return
+	_check(level_label.text.contains("First Push"), "the HUD names the level")
+	hud.set_attempt_stats(
+		{
+			"moves": 7,
+			"pushes": 3,
+			"goals_filled": 1,
+			"goals_total": 2,
+			"can_undo": true,
+			"elapsed_ms": 12600,
+		}
+	)
+	_check(moves_label.text == "Moves: 7", "the HUD shows the move count")
+	_check(pushes_label.text == "Pushes: 3", "the HUD shows the push count")
+	_check(goals_label.text == "Goals: 1/2", "the HUD shows the goal counter")
+	_check(time_label.text == "Time: 0:12.6", "the HUD shows the elapsed time")
+	_check(not undo.disabled, "Undo is enabled while history exists")
+	hud.set_attempt_stats({"moves": 0, "pushes": 0, "goals_filled": 0, "goals_total": 2, "can_undo": false})
+	_check(undo.disabled, "Undo is disabled with an empty history")
+	_ui_signal_flags.clear()
+	hud.undo_requested.connect(_on_test_undo_requested)
+	hud.restart_requested.connect(_on_test_restart_requested)
+	hud.pause_requested.connect(_on_test_pause_requested)
+	undo.pressed.emit()
+	restart.pressed.emit()
+	pause.pressed.emit()
+	_check(bool(_ui_signal_flags.get("undo", false)), "the HUD Undo button emits undo_requested")
+	_check(bool(_ui_signal_flags.get("restart", false)), "the HUD Restart button emits restart_requested")
+	_check(bool(_ui_signal_flags.get("pause", false)), "the HUD Pause button emits pause_requested")
+	hud.free()
+
+
+func _test_level_select() -> void:
+	var packed := load(LEVEL_SELECT_SCENE_PATH) as PackedScene
+	_check(packed != null, "the level select scene loads")
+	if packed == null:
+		return
+	var screen := packed.instantiate()
+	_check(screen is CanvasLayer, "the level select is a canvas layer")
+	var levels: Array[Dictionary] = [
+		{"index": 0, "name": "First Push", "par_moves": 6, "difficulty": 1, "completed": false},
+		{"index": 1, "name": "Turn the Corner", "par_moves": 14, "difficulty": 1, "completed": true},
+		{"index": 2, "name": "Two of a Kind", "par_moves": 24, "difficulty": 2, "completed": false},
+	]
+	screen.show_levels(levels)
+	_check(screen.card_count() == 3, "the level select builds one card per level")
+	var fewer_levels: Array[Dictionary] = [
+		{"index": 0, "name": "First Push", "par_moves": 6, "difficulty": 1, "completed": false},
+		{"index": 1, "name": "Turn the Corner", "par_moves": 14, "difficulty": 1, "completed": false},
+	]
+	screen.show_levels(fewer_levels)
+	_check(screen.card_count() == 2, "rebuilding the level select replaces the old cards")
+	_check(LevelSelectClass.difficulty_label(1) == "Beginner", "difficulty 1-2 reads Beginner")
+	_check(LevelSelectClass.difficulty_label(6) == "Medium", "difficulty 5-6 reads Medium")
+	_check(LevelSelectClass.difficulty_label(10) == "Expert", "difficulty 9-10 reads Expert")
+	_check(LevelSelectClass.difficulty_label(42) == "Expert", "an out-of-range difficulty clamps")
+	_ui_signal_flags.clear()
+	screen.level_selected.connect(_on_test_level_selected)
+	screen.back_requested.connect(_on_test_back_requested)
+	var grid := screen.get_node_or_null("Root/Content/Margin/Layout/Grid") as GridContainer
+	if grid != null and grid.get_child_count() > 0:
+		var card := grid.get_child(0) as Button
+		card.pressed.emit()
+	_check(bool(_ui_signal_flags.get("level_selected", false)), "a card emits level_selected")
+	_check(
+		int(_ui_signal_flags.get("selected_index", -1)) == 0,
+		"the level card reports its list index"
+	)
+	var back := screen.get_node_or_null("Root/Content/Margin/Layout/Back") as Button
+	if back != null:
+		back.pressed.emit()
+	_check(bool(_ui_signal_flags.get("back", false)), "the level select back button emits back_requested")
+	screen.free()
+
+
+func _test_main_menu() -> void:
+	var packed := load(MAIN_MENU_SCENE_PATH) as PackedScene
+	_check(packed != null, "the main menu scene loads")
+	if packed == null:
+		return
+	var menu := packed.instantiate()
+	_check(menu is CanvasLayer, "the main menu is a canvas layer")
+	var texts: Array = menu.button_texts()
+	_check(texts.size() == 5, "the main menu has five buttons")
+	if texts.size() == 5:
+		_check(texts[0] == "Play", "the first main menu button is Play")
+		_check(texts[1] == "Level Select", "the second main menu button is Level Select")
+		_check(texts[4] == "Quit", "the last main menu button is Quit")
+	var version := menu.get_node_or_null("Root/Version") as Label
+	menu.set_version("1.0")
+	_check(version != null and version.visible and version.text == "v1.0", "the version label shows v<version>")
+	menu.set_version("")
+	_check(version != null and not version.visible, "the version label hides without a project version")
+	_ui_signal_flags.clear()
+	menu.play_requested.connect(_on_test_play_requested)
+	var play := menu.get_node_or_null("Root/Content/Margin/Layout/Buttons/Play") as Button
+	if play != null:
+		play.pressed.emit()
+	_check(bool(_ui_signal_flags.get("play", false)), "the Play button emits play_requested")
+	menu.free()
+
+
+func _test_pause_menu() -> void:
+	var packed := load(PAUSE_MENU_SCENE_PATH) as PackedScene
+	_check(packed != null, "the pause menu scene loads")
+	if packed == null:
+		return
+	var menu := packed.instantiate()
+	_check(menu is CanvasLayer, "the pause menu is a canvas layer")
+	var texts: Array = menu.button_texts()
+	_check(texts.size() == 4, "the pause menu has four buttons")
+	if texts.size() == 4:
+		_check(texts[0] == "Resume", "the first pause button is Resume")
+		_check(texts[1] == "Restart", "the second pause button is Restart")
+		_check(texts[3] == "Main Menu", "the last pause button is Main Menu")
+	_ui_signal_flags.clear()
+	menu.resume_requested.connect(_on_test_resume_requested)
+	menu.main_menu_requested.connect(_on_test_main_menu_requested)
+	var resume := menu.get_node_or_null("Root/Center/Panel/Content/Resume") as Button
+	if resume != null:
+		resume.pressed.emit()
+	var main_menu := menu.get_node_or_null("Root/Center/Panel/Content/MainMenu") as Button
+	if main_menu != null:
+		main_menu.pressed.emit()
+	_check(bool(_ui_signal_flags.get("resume", false)), "Resume emits resume_requested")
+	_check(bool(_ui_signal_flags.get("main_menu", false)), "Main Menu emits main_menu_requested")
+	menu.free()
+
+
+func _test_confirm_modal() -> void:
+	var packed := load(CONFIRM_SCENE_PATH) as PackedScene
+	_check(packed != null, "the confirm modal scene loads")
+	if packed == null:
+		return
+	var modal := packed.instantiate()
+	_check(modal is CanvasLayer, "the confirm modal is a canvas layer")
+	_ui_signal_flags.clear()
+	modal.confirmed.connect(_on_test_confirmed)
+	modal.cancelled.connect(_on_test_cancelled)
+	modal.ask("Discard this attempt?")
+	var question := modal.get_node_or_null("Root/Center/Panel/Content/Question") as Label
+	_check(modal.is_open(), "ask opens the confirm modal")
+	_check(question != null and question.text == "Discard this attempt?", "the modal shows the question")
+	modal.cancel()
+	_check(not modal.is_open(), "cancel closes the modal")
+	_check(bool(_ui_signal_flags.get("cancelled", false)), "cancel emits cancelled")
+	modal.ask("Leave the level?")
+	modal.confirm()
+	_check(not modal.is_open(), "confirm closes the modal")
+	_check(bool(_ui_signal_flags.get("confirmed", false)), "confirm emits confirmed")
+	modal.free()
+
+
+func _test_star_row() -> void:
+	var row := StarRowClass.new()
+	_check(row != null, "a star row can be created")
+	if row == null:
+		return
+	row.set_stars(2)
+	_check(row.stars == 2, "the star row keeps two filled stars")
+	_check(row.custom_minimum_size.x > 0.0, "the star row reserves room for three marks")
+	row.set_stars(9)
+	_check(row.stars == 3, "the star row clamps above three")
+	row.set_stars(-4)
+	_check(row.stars == 0, "the star row clamps below zero")
+	row.free()
+
+
+func _test_gameplay_pause_blocks_input() -> void:
+	var pair := _make_controller(_make_level(BASIC_TILES))
+	var controller: GameplayControllerClass = pair[0]
+	var board: BoardBuilderClass = pair[1]
+	_check(
+		controller.request_move(GameSessionClass.Direction.RIGHT) == GameSessionClass.MoveResult.MOVED,
+		"the pause fixture takes one move"
+	)
+	controller.set_paused(true)
+	_check(controller.is_paused(), "the controller reports the paused state")
+	var moves_before := controller.session.moves
+	_check(
+		controller.request_move(GameSessionClass.Direction.RIGHT) == GameplayControllerClass.MOVE_IGNORED,
+		"a move request while paused is ignored"
+	)
+	_check(controller.session.moves == moves_before, "a paused move changes no counter")
+	_check(not controller.undo(), "undo while paused is refused")
+	var elapsed_before := controller.elapsed_ms()
+	controller._process(1.0)
+	_check(controller.elapsed_ms() == elapsed_before, "the timer does not advance while paused")
+	controller.set_paused(false)
+	_check(
+		controller.request_move(GameSessionClass.Direction.RIGHT) == GameSessionClass.MoveResult.PUSHED,
+		"unpausing lets the next move through"
+	)
+	controller.free()
+	board.free()
+
+
+func _has_key_event(events: Array[InputEvent], keycode: int) -> bool:
+	for event: InputEvent in events:
+		var key := event as InputEventKey
+		if key != null and key.physical_keycode == keycode and not key.ctrl_pressed:
+			return true
+	return false
+
+
+func _has_ctrl_key_event(events: Array[InputEvent], keycode: int) -> bool:
+	for event: InputEvent in events:
+		var key := event as InputEventKey
+		if key != null and key.physical_keycode == keycode and key.ctrl_pressed:
+			return true
+	return false
+
+
+func _has_joy_button_event(events: Array[InputEvent], button_index: int) -> bool:
+	for event: InputEvent in events:
+		var button := event as InputEventJoypadButton
+		if button != null and button.button_index == button_index:
+			return true
+	return false
+
+
+func _has_mouse_wheel_event(events: Array[InputEvent], button_index: int) -> bool:
+	for event: InputEvent in events:
+		var button := event as InputEventMouseButton
+		if button != null and button.button_index == button_index:
+			return true
+	return false
 
 
 func _make_controller(level: LevelDataClass) -> Array:
@@ -1276,3 +1731,44 @@ func _on_deadlock_detected(box_cell: Vector2i) -> void:
 
 func _on_level_completed(stats: Dictionary) -> void:
 	_completed_stats.append(stats)
+
+
+func _on_test_undo_requested() -> void:
+	_ui_signal_flags["undo"] = true
+
+
+func _on_test_restart_requested() -> void:
+	_ui_signal_flags["restart"] = true
+
+
+func _on_test_pause_requested() -> void:
+	_ui_signal_flags["pause"] = true
+
+
+func _on_test_play_requested() -> void:
+	_ui_signal_flags["play"] = true
+
+
+func _on_test_resume_requested() -> void:
+	_ui_signal_flags["resume"] = true
+
+
+func _on_test_main_menu_requested() -> void:
+	_ui_signal_flags["main_menu"] = true
+
+
+func _on_test_back_requested() -> void:
+	_ui_signal_flags["back"] = true
+
+
+func _on_test_level_selected(index: int) -> void:
+	_ui_signal_flags["level_selected"] = true
+	_ui_signal_flags["selected_index"] = index
+
+
+func _on_test_confirmed() -> void:
+	_ui_signal_flags["confirmed"] = true
+
+
+func _on_test_cancelled() -> void:
+	_ui_signal_flags["cancelled"] = true

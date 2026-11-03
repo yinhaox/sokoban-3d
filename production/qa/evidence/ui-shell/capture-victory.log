@@ -1,0 +1,6 @@
+[capture] removed stale file: .\production\qa\evidence\ui-shell\victory.png
+[capture] target: .\production\qa\evidence\ui-shell\victory.png
+[capture] user arguments: --screen=victory --level=1 --script=right,right,down,right,up,up
+[capture] waiting up to 60s for the PNG
+$ godot --path . -- --studio-capture=.\production\qa\evidence\ui-shell\victory.png --screen=victory --level=1 --script=right,right,down,right,up,up
+[capture] OK: .\production\qa\evidence\ui-shell\victory.png (37090 bytes)
