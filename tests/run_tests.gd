@@ -18,6 +18,11 @@ const DeadlockClass = preload("res://src/logic/deadlock.gd")
 const MoveRecordClass = preload("res://src/logic/move_record.gd")
 const BoardBuilderClass = preload("res://src/game/board_builder.gd")
 const CameraRigClass = preload("res://src/game/camera_rig.gd")
+const GameplayControllerClass = preload("res://src/game/gameplay_controller.gd")
+const LevelSequenceClass = preload("res://src/game/level_sequence.gd")
+const VictoryPanelClass = preload("res://src/ui/victory_panel.gd")
+
+const VICTORY_SCENE_PATH := "res://scenes/ui/victory_panel.tscn"
 
 const LEVEL_FILES := ["level-001", "level-002", "level-003"]
 const LEVEL_DIRECTORY := "res://assets/data/levels/%s.json"
@@ -130,6 +135,7 @@ var _failed := 0
 var _rejected_reasons: Array[int] = []
 var _deadlock_cells: Array[Vector2i] = []
 var _completed_stats: Array[Dictionary] = []
+var _victory_events: Array[Dictionary] = []
 
 
 func _init() -> void:
@@ -154,6 +160,11 @@ func _init() -> void:
 	_test_camera_rig()
 	_test_camera_framing()
 	_test_wall_fade_outline()
+	_test_gameplay_input_mapping()
+	_test_gameplay_controller()
+	_test_gameplay_win()
+	_test_level_sequence()
+	_test_victory_panel()
 
 	if _failed == 0:
 		print("PASS: %d checks passed" % _passed)
@@ -205,6 +216,16 @@ func _test_main_scene() -> void:
 
 	var board := root.get_node_or_null("Board")
 	_check(board != null and board.get_script() == BoardBuilderClass, "main scene carries the board builder")
+
+	var gameplay := root.get_node_or_null("Gameplay")
+	_check(
+		gameplay != null and gameplay.get_script() == GameplayControllerClass,
+		"main scene carries the gameplay controller"
+	)
+	_check(
+		root.get_node_or_null("VictoryPanel") is CanvasLayer,
+		"main scene carries the victory overlay"
+	)
 	root.free()
 
 	var level := MAIN_SCRIPT.load_level_file("res://assets/data/levels/level-001.json")
@@ -878,6 +899,307 @@ func _test_wall_fade_outline() -> void:
 		"the room bounds reach the top of the wall cap"
 	)
 	board.free()
+
+
+func _test_gameplay_input_mapping() -> void:
+	_check(
+		GameplayControllerClass.direction_for_key(KEY_UP) == GameSessionClass.Direction.UP,
+		"the up arrow requests an up move"
+	)
+	_check(
+		GameplayControllerClass.direction_for_key(KEY_W) == GameSessionClass.Direction.UP,
+		"W requests an up move"
+	)
+	_check(
+		GameplayControllerClass.direction_for_key(KEY_DOWN) == GameSessionClass.Direction.DOWN,
+		"the down arrow requests a down move"
+	)
+	_check(
+		GameplayControllerClass.direction_for_key(KEY_S) == GameSessionClass.Direction.DOWN,
+		"S requests a down move"
+	)
+	_check(
+		GameplayControllerClass.direction_for_key(KEY_LEFT) == GameSessionClass.Direction.LEFT,
+		"the left arrow requests a left move"
+	)
+	_check(
+		GameplayControllerClass.direction_for_key(KEY_A) == GameSessionClass.Direction.LEFT,
+		"A requests a left move"
+	)
+	_check(
+		GameplayControllerClass.direction_for_key(KEY_RIGHT) == GameSessionClass.Direction.RIGHT,
+		"the right arrow requests a right move"
+	)
+	_check(
+		GameplayControllerClass.direction_for_key(KEY_D) == GameSessionClass.Direction.RIGHT,
+		"D requests a right move"
+	)
+	_check(
+		GameplayControllerClass.direction_for_key(KEY_Q) == GameplayControllerClass.MOVE_IGNORED,
+		"Q stays a camera key and requests no move"
+	)
+	_check(
+		GameplayControllerClass.direction_for_key(KEY_E) == GameplayControllerClass.MOVE_IGNORED,
+		"E stays a camera key and requests no move"
+	)
+	_check(
+		GameplayControllerClass.direction_for_name(" right ") == GameSessionClass.Direction.RIGHT,
+		"a capture script direction name maps to a move"
+	)
+	_check(
+		GameplayControllerClass.direction_for_name("jump") == GameplayControllerClass.MOVE_IGNORED,
+		"an unknown capture direction is ignored"
+	)
+
+
+func _test_gameplay_controller() -> void:
+	var level := _make_level(BASIC_TILES)
+	var pair := _make_controller(level)
+	var controller: GameplayControllerClass = pair[0]
+	var board: BoardBuilderClass = pair[1]
+
+	_check(
+		controller.request_move(GameSessionClass.Direction.RIGHT)
+		== GameSessionClass.MoveResult.MOVED,
+		"a step through the controller returns MOVED"
+	)
+	_check(controller.session.player == Vector2i(3, 3), "the controller moves the session player")
+	_check(
+		controller.request_move(GameSessionClass.Direction.RIGHT)
+		== GameSessionClass.MoveResult.PUSHED,
+		"a push through the controller returns PUSHED"
+	)
+	_check(controller.session.boxes[0] == Vector2i(5, 3), "the controller moves the session box")
+	_check(
+		controller.session.moves == 2 and controller.session.pushes == 1,
+		"the controller counts the moves and pushes"
+	)
+	_check(controller.undo(), "undo after a push is accepted")
+	_check(
+		controller.session.player == Vector2i(3, 3)
+		and controller.session.boxes[0] == Vector2i(4, 3),
+		"undo of a push restores the player and the box cell"
+	)
+	_check(
+		controller.session.moves == 1 and controller.session.pushes == 0,
+		"undo of a push restores the counters"
+	)
+	_check(controller.undo(), "a second undo is accepted")
+	_check(
+		controller.session.player == Vector2i(2, 3) and controller.session.moves == 0,
+		"undo returns the player to the start cell"
+	)
+	_check(not controller.undo(), "undo on an empty history does nothing")
+	controller.free()
+	board.free()
+
+	var restart_pair := _make_controller(level)
+	var restart_controller: GameplayControllerClass = restart_pair[0]
+	restart_controller.request_move(GameSessionClass.Direction.RIGHT)
+	restart_controller.request_move(GameSessionClass.Direction.RIGHT)
+	_check(
+		restart_controller.session.moves == 2 and restart_controller.session.pushes == 1,
+		"the restart fixture has moved and pushed"
+	)
+	restart_controller.restart_level()
+	_check(
+		restart_controller.session.moves == 0 and restart_controller.session.pushes == 0,
+		"restart resets the counters"
+	)
+	_check(
+		restart_controller.session.player == level.player_start,
+		"restart restores the player start cell"
+	)
+	_check(
+		restart_controller.session.boxes[0] == level.box_starts[0],
+		"restart restores the box start cell"
+	)
+	_check(restart_controller.elapsed_ms() == 0, "restart resets the elapsed time")
+	_check(restart_controller.session.attempts == 1, "restart counts the attempt")
+
+	restart_controller._busy = true
+	var moves_before: int = restart_controller.session.moves
+	_check(
+		restart_controller.request_move(GameSessionClass.Direction.RIGHT)
+		== GameplayControllerClass.MOVE_IGNORED,
+		"a move request during a tile tween is ignored"
+	)
+	_check(
+		restart_controller.session.moves == moves_before,
+		"an ignored request changes no counter"
+	)
+	restart_controller._busy = false
+	restart_controller._held_direction = GameSessionClass.Direction.RIGHT
+	restart_controller._repeat_elapsed = 0.0
+	restart_controller._process(0.31)
+	_check(
+		restart_controller.session.moves == 1,
+		"holding a direction moves after the repeat delay"
+	)
+	restart_controller._process(0.20)
+	_check(
+		restart_controller.session.moves == 2,
+		"holding a direction keeps moving"
+	)
+	restart_controller.free()
+	restart_pair[1].free()
+
+	var blocked_pair := _make_controller(level)
+	var blocked_controller: GameplayControllerClass = blocked_pair[0]
+	blocked_controller.request_move(GameSessionClass.Direction.LEFT)
+	var blocked_moves: int = blocked_controller.session.moves
+	_check(
+		blocked_controller.request_move(GameSessionClass.Direction.LEFT)
+		== GameSessionClass.MoveResult.REJECTED_WALL,
+		"a move into a wall returns REJECTED_WALL"
+	)
+	_check(
+		blocked_controller.session.moves == blocked_moves
+		and blocked_controller.session.player == Vector2i(1, 3),
+		"a blocked move leaves the state and the counters unchanged"
+	)
+	_check(not blocked_controller.is_busy(), "the bump feedback ends and clears the busy state")
+	blocked_controller.free()
+	blocked_pair[1].free()
+
+
+func _test_gameplay_win() -> void:
+	var level := _make_level(BASIC_TILES)
+	var pair := _make_controller(level)
+	var controller: GameplayControllerClass = pair[0]
+	var board: BoardBuilderClass = pair[1]
+	_victory_events.clear()
+	controller.victory.connect(_on_controller_victory)
+	_check(not board.is_goal_filled(Vector2i(5, 1)), "the goal plate starts empty")
+	_walk_controller(
+		controller,
+		[
+			GameSessionClass.Direction.RIGHT,
+			GameSessionClass.Direction.RIGHT,
+			GameSessionClass.Direction.DOWN,
+			GameSessionClass.Direction.RIGHT,
+			GameSessionClass.Direction.UP,
+			GameSessionClass.Direction.UP,
+		]
+	)
+	_check(controller.session.is_won, "the controller completes the level")
+	_check(_victory_events.size() == 1, "the controller reports one completion")
+	if _victory_events.size() == 1:
+		var event: Dictionary = _victory_events[0]
+		var stats: Dictionary = event["stats"]
+		_check(int(stats.get("moves", -1)) == 6, "the completion payload carries the move count")
+		_check(int(stats.get("pushes", -1)) == 3, "the completion payload carries the push count")
+		_check(int(stats.get("elapsed_ms", -1)) >= 0, "the completion payload carries the elapsed time")
+		_check(not bool(event["has_next"]), "the completion payload knows the last level")
+	_check(board.is_goal_filled(Vector2i(5, 1)), "the goal plate lights when a crate lands on it")
+	_check(board.crate_cells()[0] == Vector2i(5, 1), "the board tracks the finished crate cell")
+	_check(
+		board.crate_node(0) != null
+		and board.crate_node(0).position.y
+		< board.crate_world_position(Vector2i(5, 1), false).y,
+		"a crate on a goal settles below the plate height"
+	)
+	var moves_after_win: int = controller.session.moves
+	_check(
+		controller.request_move(GameSessionClass.Direction.LEFT)
+		== GameSessionClass.MoveResult.REJECTED_FINISHED,
+		"a move after the win is rejected"
+	)
+	_check(
+		controller.session.moves == moves_after_win,
+		"a rejected move after the win changes no counter"
+	)
+	_check(not controller.undo(), "undo is closed after the win")
+	controller.free()
+	pair[1].free()
+
+
+func _test_level_sequence() -> void:
+	var paths := LevelSequenceClass.level_paths()
+	_check(paths.size() == LEVEL_FILES.size(), "the level directory lists every level file")
+	if paths.size() < 2:
+		return
+	_check(paths[0].ends_with("level-001.json"), "the level list starts at level-001")
+	_check(paths[paths.size() - 1].ends_with("level-003.json"), "the level list ends at level-003")
+	_check(LevelSequenceClass.has_next(paths, 0), "level-001 has a next level")
+	_check(
+		not LevelSequenceClass.has_next(paths, paths.size() - 1),
+		"the last level has no next level"
+	)
+	_check(LevelSequenceClass.next_path(paths, 0) == paths[1], "next_path returns the following level")
+	_check(LevelSequenceClass.index_of(paths, paths[1]) == 1, "index_of finds a level path")
+	_check(
+		MAIN_SCRIPT.resolve_level_argument("1", paths) == paths[0],
+		"a numeric level argument selects by position"
+	)
+	_check(
+		MAIN_SCRIPT.resolve_level_argument("level-002", paths) == paths[1],
+		"a level id selects that level"
+	)
+	_check(
+		MAIN_SCRIPT.resolve_level_argument("missing", paths) == "",
+		"an unknown level argument selects nothing"
+	)
+
+
+func _test_victory_panel() -> void:
+	_check(ResourceLoader.exists(VICTORY_SCENE_PATH), "the victory overlay scene exists")
+	var packed := load(VICTORY_SCENE_PATH) as PackedScene
+	_check(packed != null, "the victory overlay scene loads")
+	if packed == null:
+		return
+	var panel := packed.instantiate()
+	_check(panel is CanvasLayer, "the victory overlay is a canvas layer")
+	_check(str(panel.name) == "VictoryPanel", "the victory overlay root is named VictoryPanel")
+	var retry := panel.get_node_or_null("Center/Panel/Margin/Content/Buttons/Retry") as Button
+	var next := panel.get_node_or_null("Center/Panel/Margin/Content/Buttons/Next") as Button
+	var moves_label := panel.get_node_or_null("Center/Panel/Margin/Content/Moves") as Label
+	var time_label := panel.get_node_or_null("Center/Panel/Margin/Content/Time") as Label
+	_check(
+		retry != null and next != null and moves_label != null and time_label != null,
+		"the victory overlay carries its labels and buttons"
+	)
+	if retry == null or next == null or moves_label == null or time_label == null:
+		panel.free()
+		return
+	panel.show_result({"moves": 6, "pushes": 3, "elapsed_ms": 12600}, false)
+	_check(panel.visible, "show_result shows the overlay")
+	_check(moves_label.text.contains("6"), "the overlay shows the move count")
+	_check(time_label.text.contains("0:12.6"), "the overlay shows the elapsed time")
+	_check(next.disabled, "Next is disabled on the last level")
+	_check(not retry.disabled, "Retry stays enabled on the last level")
+	panel.show_result({"moves": 1, "pushes": 0, "elapsed_ms": 0}, true)
+	_check(not next.disabled, "Next is enabled when another level follows")
+	panel.hide_panel()
+	_check(not panel.visible, "hide_panel hides the overlay")
+	panel.free()
+	_check(VictoryPanelClass.format_elapsed_ms(0) == "0:00.0", "zero milliseconds format as 0:00.0")
+	_check(
+		VictoryPanelClass.format_elapsed_ms(12600) == "0:12.6",
+		"the time format keeps a tenth of a second"
+	)
+	_check(
+		VictoryPanelClass.format_elapsed_ms(90000) == "1:30.0",
+		"the time format rolls over to minutes"
+	)
+
+
+func _make_controller(level: LevelDataClass) -> Array:
+	var board := BoardBuilderClass.new()
+	board.build(level)
+	var controller := GameplayControllerClass.new()
+	controller.animation_enabled = false
+	controller.setup(level, board, null, false)
+	return [controller, board]
+
+
+func _walk_controller(controller: GameplayControllerClass, directions: Array[int]) -> void:
+	for direction in directions:
+		controller.request_move(direction)
+
+
+func _on_controller_victory(stats: Dictionary, has_next: bool) -> void:
+	_victory_events.append({"stats": stats, "has_next": has_next})
 
 
 func _level_dictionary(tiles: Array, overrides: Dictionary = {}) -> Dictionary:

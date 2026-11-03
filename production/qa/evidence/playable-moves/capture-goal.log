@@ -1,0 +1,6 @@
+[capture] removed stale file: C:\Users\yinha\.dsh\state\superagent-sokoban\work\playable-moves-176181f579e7\production\qa\evidence\playable-moves\goal-filled.png
+[capture] target: C:\Users\yinha\.dsh\state\superagent-sokoban\work\playable-moves-176181f579e7\production\qa\evidence\playable-moves\goal-filled.png
+[capture] user arguments: --level=3 --script=left,up,up,right,right,right,right
+[capture] waiting up to 60s for the PNG
+$ D:/SteamLibrary/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe --path . -- --studio-capture=C:\Users\yinha\.dsh\state\superagent-sokoban\work\playable-moves-176181f579e7\production\qa\evidence\playable-moves\goal-filled.png --level=3 --script=left,up,up,right,right,right,right
+[capture] OK: C:\Users\yinha\.dsh\state\superagent-sokoban\work\playable-moves-176181f579e7\production\qa\evidence\playable-moves\goal-filled.png (35070 bytes)
