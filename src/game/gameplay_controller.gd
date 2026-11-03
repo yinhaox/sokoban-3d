@@ -9,16 +9,21 @@ extends Node3D
 ## input mapping:
 ## - move 0.13 s and push 0.16 s tiles, bump 0.06 s, from
 ##   design/core-rules.md `move_seconds`, `push_seconds`, `bump_seconds`;
-## - one step per key-down, then repeat after 0.30 s every 0.10 s, from
+## - one step per action press, then repeat after 0.30 s every 0.10 s, from
 ##   design/input-and-controls.md `move_repeat_*`;
-## - `Q`/`E` are not movement keys, so the camera rig keeps them untouched.
+## - input is read from the actions registered by `InputActions`, never from
+##   physical key codes, so a remap takes effect without touching this script;
+## - while the pause menu is open the scene layer calls `set_paused(true)`, which
+##   stops the timer and refuses move requests.
 
 signal victory(stats: Dictionary, has_next: bool)
+signal attempt_changed(stats: Dictionary)
 
 const LevelDataScript = preload("res://src/logic/level_data.gd")
 const GameSessionScript = preload("res://src/logic/game_session.gd")
 const BoardBuilderScript = preload("res://src/game/board_builder.gd")
 const CameraRigScript = preload("res://src/game/camera_rig.gd")
+const InputActionsScript = preload("res://src/input/input_actions.gd")
 
 ## Returned by `request_move()` when the request was dropped because a tile
 ## tween is still running; no session call was made.
@@ -51,10 +56,12 @@ var _camera_rig: CameraRigScript
 var _has_next_level: bool = false
 
 var _busy: bool = false
+var _paused: bool = false
 var _tween: Tween
 var _elapsed_ms: float = 0.0
 var _timer_running: bool = false
 var _held_direction: int = -1
+var _held_action: String = ""
 var _repeat_elapsed: float = 0.0
 var _undo_repeat: bool = false
 var _undo_repeat_elapsed: float = 0.0
@@ -81,20 +88,24 @@ func setup(
 	session.level_completed.connect(_on_level_completed)
 	_elapsed_ms = 0.0
 	_timer_running = false
+	_paused = false
 	_held_direction = -1
+	_held_action = ""
 	_repeat_elapsed = 0.0
 	_undo_repeat = false
 	_undo_repeat_elapsed = 0.0
 	_victory_payload.clear()
 	_victory_scheduled = false
 	_sync_from_session()
+	_emit_attempt_changed()
 
 
 ## Resolves one direction request. While a tile tween runs the request is
 ## ignored (issue #11) and `MOVE_IGNORED` is returned; after the win the session
-## itself rejects the move with `REJECTED_FINISHED`.
+## itself rejects the move with `REJECTED_FINISHED`, and while paused every
+## request is refused before it reaches the session.
 func request_move(direction: int) -> int:
-	if session == null or direction < 0:
+	if session == null or direction < 0 or _paused:
 		return MOVE_IGNORED
 	if session.is_won:
 		return GameSessionScript.MoveResult.REJECTED_FINISHED
@@ -104,15 +115,32 @@ func request_move(direction: int) -> int:
 	return session.try_move(direction)
 
 
+## Stops or resumes the attempt without touching its state. The scene layer owns
+## this while the pause menu is open: the timer stops, movement and undo input is
+## refused, and a tile tween already running is allowed to finish.
+func set_paused(value: bool) -> void:
+	_paused = value
+	if value:
+		_held_direction = -1
+		_held_action = ""
+		_repeat_elapsed = 0.0
+		_undo_repeat = false
+
+
+func is_paused() -> bool:
+	return _paused
+
+
 ## Undoes one accepted move instantly. A running move tween is cancelled and the
 ## board lands on the pre-move state, so nothing flickers.
 func undo() -> bool:
-	if session == null or session.is_won:
+	if session == null or session.is_won or _paused:
 		return false
 	_kill_tween()
 	if not session.undo():
 		return false
 	_sync_from_session()
+	_emit_attempt_changed()
 	return true
 
 
@@ -125,12 +153,14 @@ func restart_level() -> void:
 	_elapsed_ms = 0.0
 	_timer_running = false
 	_held_direction = -1
+	_held_action = ""
 	_repeat_elapsed = 0.0
 	_undo_repeat = false
 	_undo_repeat_elapsed = 0.0
 	_victory_payload.clear()
 	_victory_scheduled = false
 	_sync_from_session()
+	_emit_attempt_changed()
 
 
 func elapsed_ms() -> int:
@@ -139,6 +169,21 @@ func elapsed_ms() -> int:
 
 func is_busy() -> bool:
 	return _busy
+
+
+## The counters the HUD shows for the current attempt, so the UI reads one
+## payload instead of reaching into the session.
+func attempt_stats() -> Dictionary:
+	if session == null:
+		return {}
+	return {
+		"moves": session.moves,
+		"pushes": session.pushes,
+		"goals_filled": session.filled_goal_count(),
+		"goals_total": session.goal_count(),
+		"can_undo": session.can_undo(),
+		"elapsed_ms": elapsed_ms(),
+	}
 
 
 ## Feeds a comma-separated direction list through the normal move path. Used by
@@ -165,17 +210,17 @@ func apply_move_script(script_text: String) -> bool:
 	return applied
 
 
-## Direction a physical key requests, or MOVE_IGNORED for every other key. The
-## camera keys Q/E deliberately do not appear here.
-static func direction_for_key(keycode: int) -> int:
-	match keycode:
-		KEY_UP, KEY_W:
+## Direction an action requests, or MOVE_IGNORED for every other action. The
+## camera and control actions deliberately do not appear here.
+static func direction_for_action(action: String) -> int:
+	match action:
+		InputActionsScript.MOVE_UP:
 			return GameSessionScript.Direction.UP
-		KEY_DOWN, KEY_S:
+		InputActionsScript.MOVE_DOWN:
 			return GameSessionScript.Direction.DOWN
-		KEY_LEFT, KEY_A:
+		InputActionsScript.MOVE_LEFT:
 			return GameSessionScript.Direction.LEFT
-		KEY_RIGHT, KEY_D:
+		InputActionsScript.MOVE_RIGHT:
 			return GameSessionScript.Direction.RIGHT
 	return MOVE_IGNORED
 
@@ -194,20 +239,46 @@ static func direction_for_name(direction_name: String) -> int:
 	return MOVE_IGNORED
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if not (event is InputEventKey):
+## Gameplay actions are read in `_input()` and consumed there, so a focused HUD
+## button cannot turn an arrow key into menu navigation while the player is
+## walking. The router disables this node's input processing outside gameplay.
+func _input(event: InputEvent) -> void:
+	if _paused or session == null or session.is_won:
 		return
-	var key := event as InputEventKey
-	if key.echo:
+	if event.is_action_pressed(InputActionsScript.RESTART):
+		restart_level()
+		_consume(event)
 		return
-	if key.pressed:
-		_on_key_pressed(key)
-	else:
-		_on_key_released(key)
+	if event.is_action_pressed(InputActionsScript.UNDO):
+		var key := event as InputEventKey
+		_undo_repeat = key != null and key.ctrl_pressed
+		_undo_repeat_elapsed = 0.0
+		undo()
+		_consume(event)
+		return
+	for action: String in InputActionsScript.DIRECTION_ACTIONS:
+		if event.is_action_pressed(action):
+			_held_action = action
+			_held_direction = direction_for_action(action)
+			_repeat_elapsed = 0.0
+			request_move(_held_direction)
+			_consume(event)
+			return
+		if event.is_action_released(action) and action == _held_action:
+			_held_action = ""
+			_held_direction = -1
+			_repeat_elapsed = 0.0
+
+
+func _consume(event: InputEvent) -> void:
+	if event.is_echo():
+		return
+	if is_inside_tree():
+		get_viewport().set_input_as_handled()
 
 
 func _process(delta: float) -> void:
-	if session == null:
+	if session == null or _paused:
 		return
 	if _timer_running and not session.is_won:
 		_elapsed_ms += delta * 1000.0
@@ -215,41 +286,11 @@ func _process(delta: float) -> void:
 	_tick_undo_repeat(delta)
 
 
-func _on_key_pressed(event: InputEventKey) -> void:
-	if session == null or session.is_won:
-		return
-	var keycode := int(event.physical_keycode)
-	if keycode == KEY_R:
-		restart_level()
-		return
-	if keycode == KEY_Z:
-		_undo_repeat = event.ctrl_pressed
-		_undo_repeat_elapsed = 0.0
-		undo()
-		return
-	var direction := direction_for_key(keycode)
-	if direction < 0:
-		return
-	_held_direction = direction
-	_repeat_elapsed = 0.0
-	request_move(direction)
-
-
-func _on_key_released(event: InputEventKey) -> void:
-	var keycode := int(event.physical_keycode)
-	if keycode == KEY_Z:
-		_undo_repeat = false
-		return
-	if direction_for_key(keycode) == _held_direction:
-		_held_direction = -1
-		_repeat_elapsed = 0.0
-
-
 ## Holding a direction steps once on key-down and then repeats after
 ## `repeat_delay_seconds`, every `repeat_interval_seconds`, once the previous
 ## tile tween has finished.
 func _tick_held_direction(delta: float) -> void:
-	if _held_direction < 0 or session.is_won:
+	if _held_direction < 0 or session.is_won or _paused:
 		return
 	_repeat_elapsed += delta
 	if _busy or _repeat_elapsed < repeat_delay_seconds:
@@ -261,7 +302,7 @@ func _tick_held_direction(delta: float) -> void:
 ## Holding Ctrl+Z keeps undoing until the history is empty or the key is
 ## released; a plain Z undoes exactly one step per press.
 func _tick_undo_repeat(delta: float) -> void:
-	if not _undo_repeat or _busy or not session.can_undo():
+	if not _undo_repeat or _busy or _paused or not session.can_undo():
 		_undo_repeat_elapsed = 0.0
 		return
 	_undo_repeat_elapsed += delta
@@ -282,8 +323,9 @@ func _on_move_committed(_direction: int, was_push: bool, box_index: int) -> void
 		_board.set_crate_cell(box_index, box_cell)
 		var crate_target := _board.crate_world_position(box_cell, _level.is_goal(box_cell))
 		_animate_push(box_index, _board.player_world_position(session.player), crate_target)
-		return
-	_animate_step(_board.player_world_position(session.player))
+	else:
+		_animate_step(_board.player_world_position(session.player))
+	_emit_attempt_changed()
 
 
 func _on_move_rejected(_direction: int, reason: int) -> void:
@@ -390,6 +432,12 @@ func _refresh_feedback() -> void:
 	_board.refresh_goal_fills(session.boxes)
 	for index: int in session.boxes.size():
 		_board.set_crate_on_goal(index, _level.is_goal(session.boxes[index]))
+
+
+func _emit_attempt_changed() -> void:
+	if session == null:
+		return
+	attempt_changed.emit(attempt_stats())
 
 
 func _schedule_victory() -> void:

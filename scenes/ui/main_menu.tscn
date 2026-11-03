@@ -1,0 +1,87 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/main_menu.gd" id="1_menu"]
+
+[node name="MainMenu" type="CanvasLayer"]
+layer = 20
+script = ExtResource("1_menu")
+
+[node name="Root" type="Control" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Background" type="PanelContainer" parent="Root"]
+theme_type_variation = &"ScreenBackground"
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Content" type="Control" parent="Root"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="Root/Content"]
+theme_type_variation = &"ScreenMargin"
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Layout" type="VBoxContainer" parent="Root/Content/Margin"]
+alignment = 1
+
+[node name="Title" type="Label" parent="Root/Content/Margin/Layout"]
+theme_type_variation = &"TitleLabel"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Root/Content/Margin/Layout"]
+theme_type_variation = &"MutedLabel"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="Root/Content/Margin/Layout"]
+custom_minimum_size = Vector2(0, 24)
+
+[node name="Buttons" type="VBoxContainer" parent="Root/Content/Margin/Layout"]
+size_flags_horizontal = 4
+
+[node name="Play" type="Button" parent="Root/Content/Margin/Layout/Buttons"]
+custom_minimum_size = Vector2(320, 48)
+
+[node name="LevelSelect" type="Button" parent="Root/Content/Margin/Layout/Buttons"]
+custom_minimum_size = Vector2(320, 48)
+
+[node name="Settings" type="Button" parent="Root/Content/Margin/Layout/Buttons"]
+custom_minimum_size = Vector2(320, 48)
+
+[node name="Credits" type="Button" parent="Root/Content/Margin/Layout/Buttons"]
+custom_minimum_size = Vector2(320, 48)
+
+[node name="Quit" type="Button" parent="Root/Content/Margin/Layout/Buttons"]
+custom_minimum_size = Vector2(320, 48)
+
+[node name="Version" type="Label" parent="Root"]
+theme_type_variation = &"MutedLabel"
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -40.0
+offset_right = -24.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+horizontal_alignment = 2

@@ -1,0 +1,54 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/confirm_modal.gd" id="1_confirm"]
+
+[node name="ConfirmModal" type="CanvasLayer"]
+layer = 40
+script = ExtResource("1_confirm")
+
+[node name="Root" type="Control" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Dim" type="PanelContainer" parent="Root"]
+theme_type_variation = &"DimBackground"
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Center" type="CenterContainer" parent="Root"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Root/Center"]
+theme_type_variation = &"ModalPanel"
+custom_minimum_size = Vector2(460, 0)
+
+[node name="Content" type="VBoxContainer" parent="Root/Center/Panel"]
+
+[node name="Question" type="Label" parent="Root/Center/Panel/Content"]
+custom_minimum_size = Vector2(400, 0)
+autowrap_mode = 2
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="Root/Center/Panel/Content"]
+custom_minimum_size = Vector2(0, 8)
+
+[node name="Buttons" type="HBoxContainer" parent="Root/Center/Panel/Content"]
+alignment = 1
+
+[node name="Cancel" type="Button" parent="Root/Center/Panel/Content/Buttons"]
+custom_minimum_size = Vector2(140, 44)
+
+[node name="Confirm" type="Button" parent="Root/Center/Panel/Content/Buttons"]
+custom_minimum_size = Vector2(140, 44)

@@ -1,0 +1,6 @@
+[capture] removed stale file: .\production\qa\evidence\ui-shell\hud.png
+[capture] target: .\production\qa\evidence\ui-shell\hud.png
+[capture] user arguments: --screen=gameplay --level=1 --script=right,right
+[capture] waiting up to 60s for the PNG
+$ godot --path . -- --studio-capture=.\production\qa\evidence\ui-shell\hud.png --screen=gameplay --level=1 --script=right,right
+[capture] OK: .\production\qa\evidence\ui-shell\hud.png (42341 bytes)

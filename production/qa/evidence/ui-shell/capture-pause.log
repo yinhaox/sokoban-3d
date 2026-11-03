@@ -1,0 +1,6 @@
+[capture] removed stale file: .\production\qa\evidence\ui-shell\pause.png
+[capture] target: .\production\qa\evidence\ui-shell\pause.png
+[capture] user arguments: --screen=pause --level=1 --script=right,right
+[capture] waiting up to 60s for the PNG
+$ godot --path . -- --studio-capture=.\production\qa\evidence\ui-shell\pause.png --screen=pause --level=1 --script=right,right
+[capture] OK: .\production\qa\evidence\ui-shell\pause.png (30939 bytes)
