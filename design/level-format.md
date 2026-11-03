@@ -74,7 +74,7 @@ For the studio, adding a level is a five-minute task: copy the template, paint t
 - `tests/run_tests.gd` loads every file in `assets/data/levels/`, asserts zero validation errors, and asserts every level is solvable by the reference solver (see [technical-architecture.md](technical-architecture.md)).
 - A `.schema.md` file documenting this table ships next to the levels as `assets/data/levels/level.schema.md`, per `.dsh/rules/data.md`.
 
-**Example: level 1.**
+**Example: level 1.** Copied verbatim from `assets/data/levels/level-001.json`; its seven tile rows are each seven characters, matching `columns: 7`.
 
 ```json
 {
@@ -89,14 +89,14 @@ For the studio, adding a level is a five-minute task: copy the template, paint t
   "rows": 7,
   "tiles": [
     "#######",
-    "#____._#",
-    "#______#",
+    "#____.#",
+    "#_____#",
     "#_@_$_#",
-    "#______#",
-    "#______#",
+    "#_____#",
+    "#_____#",
     "#######"
   ],
-  "notes": "Walk right, push the crate right, circle up and push it twice onto the plate."
+  "notes": "Walk right, push the crate right once, circle below it and push it up twice onto the plate."
 }
 ```
 
