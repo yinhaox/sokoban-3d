@@ -528,7 +528,7 @@ PASS: unpausing lets the next move through
 WARNING: save: no profile at user://test-save-roundtrip.json; starting fresh
    at: push_warning (core/variant/variant_utility.cpp:1033)
    GDScript backtrace (most recent call first):
-       [0] load_profile (res://src/logic/save_store.gd:72)
+       [0] load_profile (res://src/logic/save_store.gd:75)
        [1] _test_save_round_trip (res://tests/run_tests.gd:1802)
        [2] _test_save_settings_i18n (res://tests/run_tests.gd:1785)
        [3] _init (res://tests/run_tests.gd:205)
@@ -551,18 +551,21 @@ PASS: the unlock round-trips through the file
 WARNING: save: adopted the readable profile from user://test-save-roundtrip.json.bak
    at: push_warning (core/variant/variant_utility.cpp:1033)
    GDScript backtrace (most recent call first):
-       [0] load_profile (res://src/logic/save_store.gd:101)
+       [0] load_profile (res://src/logic/save_store.gd:104)
        [1] _test_save_round_trip (res://tests/run_tests.gd:1826)
        [2] _test_save_settings_i18n (res://tests/run_tests.gd:1785)
        [3] _init (res://tests/run_tests.gd:205)
 PASS: a missing profile adopts the readable backup
 PASS: the adopted backup keeps the unlock
+PASS: an unknown top-level key is preserved
+PASS: lifetime stats are preserved
+PASS: the unknown key is written back after a round trip
 WARNING: save: user://test-save-corrupt.json is corrupt (invalid JSON at line 0); backing it up
    at: push_warning (core/variant/variant_utility.cpp:1033)
    GDScript backtrace (most recent call first):
-       [0] _recover_corrupt (res://src/logic/save_store.gd:421)
-       [1] load_profile (res://src/logic/save_store.gd:81)
-       [2] _test_save_corrupt_recovery (res://tests/run_tests.gd:1841)
+       [0] _recover_corrupt (res://src/logic/save_store.gd:449)
+       [1] load_profile (res://src/logic/save_store.gd:84)
+       [2] _test_save_corrupt_recovery (res://tests/run_tests.gd:1873)
        [3] _test_save_settings_i18n (res://tests/run_tests.gd:1786)
        [4] _init (res://tests/run_tests.gd:205)
 PASS: a damaged profile reports the corrupt status
@@ -576,9 +579,9 @@ PASS: the fresh profile left after corruption loads cleanly
 WARNING: save: profile version 2 is newer than 1; starting fresh
    at: push_warning (core/variant/variant_utility.cpp:1033)
    GDScript backtrace (most recent call first):
-       [0] _recover_newer (res://src/logic/save_store.gd:435)
-       [1] load_profile (res://src/logic/save_store.gd:89)
-       [2] _test_save_newer_version (res://tests/run_tests.gd:1872)
+       [0] _recover_newer (res://src/logic/save_store.gd:463)
+       [1] load_profile (res://src/logic/save_store.gd:92)
+       [2] _test_save_newer_version (res://tests/run_tests.gd:1904)
        [3] _test_save_settings_i18n (res://tests/run_tests.gd:1787)
        [4] _init (res://tests/run_tests.gd:205)
 PASS: a newer profile reports the newer status
@@ -589,8 +592,8 @@ PASS: a newer profile's data is not adopted into the fresh one
 WARNING: save: profile is from a newer version; refusing to overwrite user://test-save-newer.json
    at: push_warning (core/variant/variant_utility.cpp:1033)
    GDScript backtrace (most recent call first):
-       [0] save_now (res://src/logic/save_store.gd:216)
-       [1] _test_save_newer_version (res://tests/run_tests.gd:1879)
+       [0] save_now (res://src/logic/save_store.gd:219)
+       [1] _test_save_newer_version (res://tests/run_tests.gd:1911)
        [2] _test_save_settings_i18n (res://tests/run_tests.gd:1787)
        [3] _init (res://tests/run_tests.gd:205)
 PASS: a read-only store refuses to write
@@ -604,8 +607,8 @@ PASS: the migrated profile is written back
 WARNING: save: no profile at user://test-save-records.json; starting fresh
    at: push_warning (core/variant/variant_utility.cpp:1033)
    GDScript backtrace (most recent call first):
-       [0] load_profile (res://src/logic/save_store.gd:72)
-       [1] _test_save_unlock_and_records (res://tests/run_tests.gd:1913)
+       [0] load_profile (res://src/logic/save_store.gd:75)
+       [1] _test_save_unlock_and_records (res://tests/run_tests.gd:1945)
        [2] _test_save_settings_i18n (res://tests/run_tests.gd:1789)
        [3] _init (res://tests/run_tests.gd:205)
 PASS: Play starts on the first unlocked level
@@ -632,7 +635,7 @@ WARNING: settings: master_volume=5.0 clamped to 1.0
    at: push_warning (core/variant/variant_utility.cpp:1033)
    GDScript backtrace (most recent call first):
        [0] clamp_value (res://src/logic/settings_model.gd:81)
-       [1] _test_settings_clamping (res://tests/run_tests.gd:1963)
+       [1] _test_settings_clamping (res://tests/run_tests.gd:1995)
        [2] _test_save_settings_i18n (res://tests/run_tests.gd:1790)
        [3] _init (res://tests/run_tests.gd:205)
 PASS: a volume above the range clamps to 1.0
@@ -640,7 +643,7 @@ WARNING: settings: master_volume=-3.0 clamped to 0.0
    at: push_warning (core/variant/variant_utility.cpp:1033)
    GDScript backtrace (most recent call first):
        [0] clamp_value (res://src/logic/settings_model.gd:81)
-       [1] _test_settings_clamping (res://tests/run_tests.gd:1964)
+       [1] _test_settings_clamping (res://tests/run_tests.gd:1996)
        [2] _test_save_settings_i18n (res://tests/run_tests.gd:1790)
        [3] _init (res://tests/run_tests.gd:205)
 PASS: a volume below the range clamps to 0.0
@@ -648,7 +651,7 @@ WARNING: settings: camera_sensitivity=9.0 clamped to 2.0
    at: push_warning (core/variant/variant_utility.cpp:1033)
    GDScript backtrace (most recent call first):
        [0] clamp_value (res://src/logic/settings_model.gd:81)
-       [1] _test_settings_clamping (res://tests/run_tests.gd:1965)
+       [1] _test_settings_clamping (res://tests/run_tests.gd:1997)
        [2] _test_save_settings_i18n (res://tests/run_tests.gd:1790)
        [3] _init (res://tests/run_tests.gd:205)
 PASS: camera sensitivity clamps at its maximum
@@ -656,7 +659,7 @@ WARNING: settings: camera_sensitivity=0.1 clamped to 0.5
    at: push_warning (core/variant/variant_utility.cpp:1033)
    GDScript backtrace (most recent call first):
        [0] clamp_value (res://src/logic/settings_model.gd:81)
-       [1] _test_settings_clamping (res://tests/run_tests.gd:1966)
+       [1] _test_settings_clamping (res://tests/run_tests.gd:1998)
        [2] _test_save_settings_i18n (res://tests/run_tests.gd:1790)
        [3] _init (res://tests/run_tests.gd:205)
 PASS: camera sensitivity clamps at its minimum
@@ -664,7 +667,7 @@ WARNING: settings: language 'fr' is not supported
    at: push_warning (core/variant/variant_utility.cpp:1033)
    GDScript backtrace (most recent call first):
        [0] clamp_value (res://src/logic/settings_model.gd:85)
-       [1] _test_settings_clamping (res://tests/run_tests.gd:1967)
+       [1] _test_settings_clamping (res://tests/run_tests.gd:1999)
        [2] _test_save_settings_i18n (res://tests/run_tests.gd:1790)
        [3] _init (res://tests/run_tests.gd:205)
 PASS: an unsupported language falls back to English
@@ -672,7 +675,7 @@ WARNING: settings: colorblind mode 'rainbow' is not supported
    at: push_warning (core/variant/variant_utility.cpp:1033)
    GDScript backtrace (most recent call first):
        [0] clamp_value (res://src/logic/settings_model.gd:90)
-       [1] _test_settings_clamping (res://tests/run_tests.gd:1968)
+       [1] _test_settings_clamping (res://tests/run_tests.gd:2000)
        [2] _test_save_settings_i18n (res://tests/run_tests.gd:1790)
        [3] _init (res://tests/run_tests.gd:205)
 PASS: an unsupported colorblind mode falls back to off
@@ -680,7 +683,7 @@ WARNING: settings: reduce_motion expects a bool, got 4
    at: push_warning (core/variant/variant_utility.cpp:1033)
    GDScript backtrace (most recent call first):
        [0] clamp_value (res://src/logic/settings_model.gd:95)
-       [1] _test_settings_clamping (res://tests/run_tests.gd:1969)
+       [1] _test_settings_clamping (res://tests/run_tests.gd:2001)
        [2] _test_save_settings_i18n (res://tests/run_tests.gd:1790)
        [3] _init (res://tests/run_tests.gd:205)
 PASS: a non-bool reduce-motion value falls back to false
@@ -689,7 +692,7 @@ WARNING: settings: master_volume expects a number, got 4
    GDScript backtrace (most recent call first):
        [0] clamp_value (res://src/logic/settings_model.gd:76)
        [1] sanitize (res://src/logic/settings_model.gd:65)
-       [2] _test_settings_clamping (res://tests/run_tests.gd:1970)
+       [2] _test_settings_clamping (res://tests/run_tests.gd:2002)
        [3] _test_save_settings_i18n (res://tests/run_tests.gd:1790)
        [4] _init (res://tests/run_tests.gd:205)
 PASS: sanitize replaces a wrong-type value with its default
@@ -742,5 +745,5 @@ PASS: camera sensitivity 2 halves the tween time
 PASS: reduce motion makes a camera tween instant
 PASS: a fresh controller allows animation
 PASS: reduce motion disables tile animation
-PASS: 630 checks passed
+PASS: 633 checks passed
 [test] PASS
