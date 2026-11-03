@@ -1,26 +1,46 @@
-extends Node2D
+extends Node3D
 
-## Boot scene for the Game Studio template.
+## Boot scene for the 3D Sokoban room.
 ##
-## Keeps no gameplay state: it only shows the studio title so that a fresh
-## clone can run, and so that `capture_command` has something to screenshot.
+## Loads one level file through the logic layer, builds the visible room and
+## places the isometric camera. It owns no puzzle rules: movement, pushing and
+## UI arrive in later stories.
 
-## Text rendered by the Title label in scenes/main.tscn.
-const TITLE = "Game Studio"
+const LevelDataScript = preload("res://src/logic/level_data.gd")
+const BoardBuilderScript = preload("res://src/game/board_builder.gd")
+const CameraRigScript = preload("res://src/game/camera_rig.gd")
 
+const DEFAULT_LEVEL_PATH := "res://assets/data/levels/level-001.json"
 
-## Title text, exposed as a static helper so headless tests can check it
-## without instantiating the scene.
-static func title_text() -> String:
-	return TITLE
+@export_file("*.json") var level_path: String = DEFAULT_LEVEL_PATH
 
-
-## Status line shown under the title. Negative frame counts are clamped to 0.
-static func status_text(frames: int) -> String:
-	return "%s (%d frames)" % [TITLE, maxi(frames, 0)]
+@onready var _board: BoardBuilderScript = $Board as BoardBuilderScript
+@onready var _camera_rig: CameraRigScript = $CameraRig as CameraRigScript
 
 
 func _ready() -> void:
-	var label := get_node_or_null("Title") as Label
-	if label != null:
-		label.text = title_text()
+	var level := load_level_file(level_path)
+	if level == null:
+		return
+	_board.build(level)
+	_camera_rig.setup(level, _board)
+
+
+## Reads and validates one level file. Returns null and logs the reason when the
+## file is missing, unreadable or invalid, so the boot scene never half-loads a
+## room.
+static func load_level_file(path: String) -> LevelDataScript:
+	if not FileAccess.file_exists(path):
+		push_error("main: level file not found: %s" % path)
+		return null
+	var file := FileAccess.open(path, FileAccess.READ)
+	if file == null:
+		push_error("main: cannot read level file: %s" % path)
+		return null
+	var text := file.get_as_text()
+	file.close()
+	var level := LevelDataScript.from_json_text(text, path.get_file().get_basename())
+	if not level.is_valid():
+		push_error("main: invalid level '%s': %s" % [path, level.error_summary()])
+		return null
+	return level
