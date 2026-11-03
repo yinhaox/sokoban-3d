@@ -1,0 +1,5 @@
+[capture] removed stale file: .\production\qa\evidence\camera-framing\after.png
+[capture] target: .\production\qa\evidence\camera-framing\after.png
+[capture] waiting up to 60s for the PNG
+$ godot --path . -- --studio-capture=.\production\qa\evidence\camera-framing\after.png
+[capture] OK: .\production\qa\evidence\camera-framing\after.png (35304 bytes)

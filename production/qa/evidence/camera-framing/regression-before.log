@@ -1,0 +1,302 @@
+[test] project: .
+$ godot --headless --path . -s res://tests/run_tests.gd
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+PASS: scenes/main.tscn exists
+PASS: scenes/main.tscn loads as a PackedScene
+PASS: main scene root is a Node3D
+PASS: main scene root is named Main
+PASS: main scene root runs src/main.gd
+PASS: main scene carries a DirectionalLight3D
+PASS: the directional light casts shadows
+PASS: main scene carries a WorldEnvironment
+PASS: main scene carries a Camera3D under the camera rig
+PASS: the camera uses orthogonal projection
+PASS: main scene carries the board builder
+PASS: the boot level path loads level-001
+PASS: the boot level is level-001
+PASS: project name is Game Studio
+PASS: main scene is registered in project.godot
+PASS: StudioCapture autoload points at the capture addon
+PASS: viewport width is 1152
+PASS: viewport height is 648
+PASS: a valid level fixture loads without errors
+PASS: a level keeps its id field
+PASS: a level keeps its columns and rows
+PASS: a level keeps its par values
+PASS: the player start comes from the '@' tile
+PASS: the box start count comes from the '$' tile
+PASS: the box start cell comes from the '$' tile
+PASS: the goal cell comes from the '.' tile
+PASS: cell_at reports a wall
+PASS: cell_at reports a floor cell
+PASS: cell_at reports a goal cell
+PASS: cell_at reports VOID for a coordinate outside the grid
+PASS: is_wall treats an out-of-grid coordinate as a wall
+PASS: is_wall treats a coordinate past the right edge as a wall
+PASS: is_goal reports only goal cells
+PASS: initial_boxes returns a copy of the starting boxes
+PASS: initial_boxes returns the starting box cell
+PASS: an empty optional notes field is accepted
+PASS: a level with a '* box-on-goal tile validates
+PASS: a '*' tile is a box start
+PASS: a '*' tile is also a goal
+PASS: a level with a '+' player-on-goal tile validates
+PASS: a '+' tile is the player start
+PASS: a '+' tile is also a goal
+PASS: a tile row of the wrong length is rejected
+PASS: a short tile row error names the row index
+PASS: cell_at on an invalid level returns VOID instead of crashing
+PASS: columns outside 5..15 is rejected
+PASS: a column range error names the value
+PASS: rows outside 5..15 is rejected
+PASS: a row range error names the value
+PASS: a level with no player is rejected
+PASS: a missing-player error names the player
+PASS: a level with two players is rejected
+PASS: a goal count that differs from the box count is rejected
+PASS: a goal-count error names the goals
+PASS: an unknown cell character is rejected
+PASS: an unknown-character error names the character
+PASS: a border that is not all walls is rejected
+PASS: a border error names the border
+PASS: a level that starts already solved is rejected
+PASS: a solved-start error says so
+PASS: an id outside level-NNN is rejected
+PASS: an id error names the id field
+PASS: an id that differs from the file stem is rejected
+PASS: a file-stem error names the file stem
+PASS: a missing required field is rejected
+PASS: a missing-field error names the field
+PASS: a field with the wrong type is rejected
+PASS: a wrong-type error says the expected type
+PASS: a tiles field that is not an array is rejected
+PASS: a tiles-type error names the tiles field
+PASS: par_pushes greater than par_moves is rejected
+PASS: a par error names par_pushes
+PASS: notes longer than 200 characters is rejected
+WARNING: level 'level-900': unknown field 'extra_field' is ignored
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] _warn_unknown_fields (res://src/logic/level_data.gd:308)
+       [1] _parse (res://src/logic/level_data.gd:148)
+       [2] from_dictionary (res://src/logic/level_data.gd:107)
+       [3] _make_level (res://tests/run_tests.gd:902)
+       [4] _test_level_data_invalid (res://tests/run_tests.gd:371)
+       [5] _init (res://tests/run_tests.gd:140)
+PASS: an unknown field only warns and is ignored
+PASS: malformed JSON is rejected instead of crashing
+PASS: a malformed-JSON error says the JSON is invalid
+PASS: a JSON array at the top level is rejected
+PASS: a top-level type error names the expected object
+PASS: a JSON level fixture parses
+PASS: a JSON level fixture reads the player start
+PASS: a move record keeps the direction
+PASS: a move record keeps the push flag
+PASS: a move record keeps the box index
+PASS: a move record keeps the previous player cell
+PASS: a move record keeps the previous counters
+PASS: a move record keeps the previous box cells
+PASS: a session starts the player on the start cell
+PASS: a session starts the boxes on their start cells
+PASS: a session starts with zero counters
+PASS: a session starts with an empty undo history
+PASS: stepping into floor returns MOVED
+PASS: an accepted step moves the player one cell
+PASS: a step counts one move and no push
+PASS: a step adds one undo entry
+PASS: a move into a wall returns REJECTED_WALL
+PASS: a rejected wall move does not move the player
+PASS: a rejected wall move does not change counters
+PASS: a rejected move adds no undo entry
+PASS: a rejected move emits move_rejected with the reason
+PASS: pushing a box into free floor returns PUSHED
+PASS: a push moves the player into the box's old cell
+PASS: a push moves the box one cell further
+PASS: a push counts one move and one push
+PASS: a push adds one undo entry
+PASS: moving a box onto floor does not win the level
+PASS: pushing a box into a wall returns REJECTED_BOX
+PASS: a blocked push does not move the player
+PASS: a blocked push does not move the box
+PASS: a blocked push changes no counter
+PASS: a blocked push adds no undo entry
+PASS: pushing a box into another box returns REJECTED_BOX
+PASS: a box-on-box rejection leaves the player in place
+PASS: a box-on-box rejection leaves every box in place
+PASS: a box-on-box rejection changes no counter
+PASS: one hundred accepted moves are counted
+PASS: at least one hundred moves stay reachable by undo
+PASS: the walk cycle ends where it started
+PASS: undo rewinds one hundred accepted moves
+PASS: undo restores the counters
+PASS: undo restores the player position
+PASS: undo empties the history
+PASS: undo on an empty history does nothing
+PASS: the undo history is capped at undo_limit moves
+PASS: the oldest undo entry is discarded at the cap
+PASS: the discarded entry leaves the state after the first move
+PASS: undo accepts a push entry
+PASS: undo of a push restores the previous player cell
+PASS: undo of a push restores the previous box cell
+PASS: undo of a push restores the counters before the push
+PASS: the restart fixture has moved and pushed
+PASS: a new session has zero attempts
+PASS: restart restores the player start
+PASS: restart restores the box start cells
+PASS: restart resets the counters
+PASS: restart empties the undo history
+PASS: restart clears the win state
+PASS: restart counts the attempt
+PASS: a box that is not on the last goal does not win
+PASS: no completion signal fires before every goal is filled
+PASS: pushing the last box onto its goal wins the level
+PASS: winning emits level_completed once
+PASS: the completion stats carry the move count
+PASS: the completion stats carry the push count
+PASS: a move after the win is rejected
+PASS: a move after the win changes no counter
+PASS: the first box reaches its goal
+PASS: a box on one goal does not win while another goal is empty
+PASS: no completion signal fires while a goal is empty
+PASS: filling the last empty goal wins the level
+PASS: the two-goal win emits level_completed once
+PASS: the two-goal win counts eleven moves
+PASS: the two-goal win counts two pushes
+PASS: a box in a non-goal corner is deadlocked
+PASS: a box against one wall only is not deadlocked
+PASS: a box in a corner goal is not deadlocked
+PASS: a box with one wall and one open axis is not deadlocked
+PASS: a box in the open is not deadlocked
+PASS: the box is pushed into the corner
+PASS: a deadlocked push records the box cell
+PASS: a deadlocked push emits deadlock_detected once
+PASS: a box pushed onto a goal emits no deadlock warning
+PASS: level file exists: res://assets/data/levels/level-001.json
+PASS: level file validates: level-001 ()
+PASS: level id matches its file stem: level-001
+PASS: level boxes match goals: level-001
+PASS: level file exists: res://assets/data/levels/level-002.json
+PASS: level file validates: level-002 ()
+PASS: level id matches its file stem: level-002
+PASS: level boxes match goals: level-002
+PASS: level file exists: res://assets/data/levels/level-003.json
+PASS: level file validates: level-003 ()
+PASS: level id matches its file stem: level-003
+PASS: level boxes match goals: level-003
+PASS: level 001 carries the par values from its file
+PASS: level 001 is solvable from its file
+PASS: level 001 is solved within its par moves
+PASS: level 001 is solved within its par pushes
+PASS: cell (0,0) of a 7x7 room is at (-3,0,-3)
+PASS: cell (6,6) of a 7x7 room is at (3,0,3)
+PASS: the centre cell of a 15x15 room is at the origin
+PASS: one cell is exactly one world unit
+PASS: world_to_cell inverts cell_to_world
+PASS: level_centre centres a rectangular room
+PASS: the board places the player on the player start
+PASS: the board builds a player piece
+PASS: the player piece sits on its cell
+PASS: the player capsule is above the floor
+PASS: the board builds a crate for every crate start
+PASS: the crate sits on its cell
+PASS: the crate bottom face is above the floor top face
+PASS: the board builds a goal plate for every goal
+PASS: the goal plate bottom face is above the floor top face
+PASS: the board builds walls from the wall cells
+PASS: each wall carries a darker top cap
+PASS: a 7x7 room has 24 wall cells
+PASS: quarter turn 0 keeps the default yaw
+PASS: one quarter turn adds 90 degrees
+PASS: four quarter turns return to the default yaw
+PASS: a negative quarter turn wraps to 315 degrees
+PASS: a pitch below 30 degrees is clamped
+PASS: the default pitch is inside its limits
+PASS: a pitch above 55 degrees is clamped
+PASS: a zoom step moves the multiplier by one step
+PASS: zoom stops at the lower bound
+PASS: zoom stops at the upper bound
+PASS: the 7x7 room fits inside the camera size bounds
+PASS: a large room clamps at the maximum camera size
+PASS: a tiny room clamps at the minimum camera size
+PASS: the column walk crosses the middle cell
+PASS: the column walk crosses the last row
+PASS: a near wall between the camera and the player is marked for fade
+PASS: every faded cell is a wall cell
+PASS: every faded cell is a wall cell
+PASS: the faded walls are on the camera side of the room
+PASS: a wall behind the player is not faded
+PASS: no targets means no faded walls
+FAIL: 7x7 room at yaw 45: the projected room is centred in the view
+PASS: 7x7 room at yaw 45: the whole room height fits the orthographic size
+PASS: 7x7 room at yaw 45: the whole room width fits the orthographic size
+PASS: 7x7 room at yaw 45: every room corner is in front of the camera
+PASS: 7x7 room at yaw 45: the room fills its fill ratio of the view
+FAIL: 9x7 room at yaw 45: the projected room is centred in the view
+PASS: 9x7 room at yaw 45: the whole room height fits the orthographic size
+PASS: 9x7 room at yaw 45: the whole room width fits the orthographic size
+PASS: 9x7 room at yaw 45: every room corner is in front of the camera
+PASS: 9x7 room at yaw 45: the room fills its fill ratio of the view
+FAIL: 15x15 room at yaw 45: the projected room is centred in the view
+PASS: 15x15 room at yaw 45: the whole room height fits the orthographic size
+PASS: 15x15 room at yaw 45: the whole room width fits the orthographic size
+PASS: 15x15 room at yaw 45: every room corner is in front of the camera
+PASS: 15x15 room at yaw 45: the room fills its fill ratio of the view
+FAIL: 7x7 room at yaw 135: the projected room is centred in the view
+PASS: 7x7 room at yaw 135: the whole room height fits the orthographic size
+PASS: 7x7 room at yaw 135: the whole room width fits the orthographic size
+PASS: 7x7 room at yaw 135: every room corner is in front of the camera
+PASS: 7x7 room at yaw 135: the room fills its fill ratio of the view
+FAIL: 9x7 room at yaw 135: the projected room is centred in the view
+PASS: 9x7 room at yaw 135: the whole room height fits the orthographic size
+PASS: 9x7 room at yaw 135: the whole room width fits the orthographic size
+PASS: 9x7 room at yaw 135: every room corner is in front of the camera
+PASS: 9x7 room at yaw 135: the room fills its fill ratio of the view
+FAIL: 15x15 room at yaw 135: the projected room is centred in the view
+PASS: 15x15 room at yaw 135: the whole room height fits the orthographic size
+PASS: 15x15 room at yaw 135: the whole room width fits the orthographic size
+PASS: 15x15 room at yaw 135: every room corner is in front of the camera
+PASS: 15x15 room at yaw 135: the room fills its fill ratio of the view
+FAIL: 7x7 room at yaw 225: the projected room is centred in the view
+PASS: 7x7 room at yaw 225: the whole room height fits the orthographic size
+PASS: 7x7 room at yaw 225: the whole room width fits the orthographic size
+PASS: 7x7 room at yaw 225: every room corner is in front of the camera
+PASS: 7x7 room at yaw 225: the room fills its fill ratio of the view
+FAIL: 9x7 room at yaw 225: the projected room is centred in the view
+PASS: 9x7 room at yaw 225: the whole room height fits the orthographic size
+PASS: 9x7 room at yaw 225: the whole room width fits the orthographic size
+PASS: 9x7 room at yaw 225: every room corner is in front of the camera
+PASS: 9x7 room at yaw 225: the room fills its fill ratio of the view
+FAIL: 15x15 room at yaw 225: the projected room is centred in the view
+PASS: 15x15 room at yaw 225: the whole room height fits the orthographic size
+PASS: 15x15 room at yaw 225: the whole room width fits the orthographic size
+PASS: 15x15 room at yaw 225: every room corner is in front of the camera
+PASS: 15x15 room at yaw 225: the room fills its fill ratio of the view
+FAIL: 7x7 room at yaw 315: the projected room is centred in the view
+PASS: 7x7 room at yaw 315: the whole room height fits the orthographic size
+PASS: 7x7 room at yaw 315: the whole room width fits the orthographic size
+PASS: 7x7 room at yaw 315: every room corner is in front of the camera
+PASS: 7x7 room at yaw 315: the room fills its fill ratio of the view
+FAIL: 9x7 room at yaw 315: the projected room is centred in the view
+PASS: 9x7 room at yaw 315: the whole room height fits the orthographic size
+PASS: 9x7 room at yaw 315: the whole room width fits the orthographic size
+PASS: 9x7 room at yaw 315: every room corner is in front of the camera
+PASS: 9x7 room at yaw 315: the room fills its fill ratio of the view
+FAIL: 15x15 room at yaw 315: the projected room is centred in the view
+PASS: 15x15 room at yaw 315: the whole room height fits the orthographic size
+PASS: 15x15 room at yaw 315: the whole room width fits the orthographic size
+PASS: 15x15 room at yaw 315: every room corner is in front of the camera
+PASS: 15x15 room at yaw 315: the room fills its fill ratio of the view
+PASS: a 9x7 room is framed larger than a 7x7 room
+PASS: a faded wall keeps some alpha instead of vanishing
+PASS: a faded wall stays semi-transparent
+FAIL: a faded wall's top cap stays more opaque than its sides
+FAIL: a faded border wall keeps a visible outline in its top cap
+PASS: an opaque wall keeps an opaque cap
+FAIL: even a full fade keeps the wall outline
+PASS: the room bounds start at the outer face of the border walls
+PASS: the room bounds cover the whole 7x7 footprint
+PASS: the room bounds include the floor slab
+PASS: the room bounds reach the top of the wall cap
+FAIL: 15 of 287 checks failed
+[test] FAIL (exit code 1)
