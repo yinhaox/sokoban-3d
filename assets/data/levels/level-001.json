@@ -1,0 +1,21 @@
+{
+  "id": "level-001",
+  "name": "First Push",
+  "name_key": "level_001_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 1,
+  "par_moves": 6,
+  "par_pushes": 3,
+  "columns": 7,
+  "rows": 7,
+  "tiles": [
+    "#######",
+    "#____.#",
+    "#_____#",
+    "#_@_$_#",
+    "#_____#",
+    "#_____#",
+    "#######"
+  ],
+  "notes": "Walk right, push the crate right once, circle below it and push it up twice onto the plate."
+}
