@@ -210,6 +210,7 @@ func _init() -> void:
 	_test_gameplay_controller()
 	_test_gameplay_win()
 	_test_level_sequence()
+	_test_boot_aids()
 	_test_victory_panel()
 	_test_input_actions()
 	_test_star_rating()
@@ -1250,6 +1251,133 @@ func _test_level_sequence() -> void:
 		MAIN_SCRIPT.resolve_level_argument("missing", paths) == "",
 		"an unknown level argument selects nothing"
 	)
+
+
+func _test_boot_aids() -> void:
+	var paths := LevelSequenceClass.level_paths()
+	var empty := MAIN_SCRIPT.parse_boot_arguments([])
+	_check(
+		str(empty["level"]).is_empty() and str(empty["screen"]).is_empty(),
+		"a boot without arguments asks for no level and no screen"
+	)
+	_check(
+		int(empty["reduce_motion"]) == MAIN_SCRIPT.BOOT_FLAG_UNSET,
+		"a boot without arguments leaves reduce motion unset"
+	)
+	_check(
+		str(empty["language"]).is_empty() and str(empty["colorblind"]).is_empty(),
+		"a boot without arguments leaves the setting overrides unset"
+	)
+	_check((empty["warnings"] as Array).is_empty(), "a boot without arguments raises no warning")
+
+	var parsed := MAIN_SCRIPT.parse_boot_arguments(
+		[
+			"--level=010",
+			"--screen=play",
+			"--lang=zh",
+			"--colorblind=1",
+			"--reduce-motion=0",
+			"--script=right,right,up",
+		]
+	)
+	_check(str(parsed["level"]) == "010", "the boot arguments keep the level value")
+	_check(str(parsed["screen"]) == "gameplay", "the play screen argument resolves to gameplay")
+	_check(str(parsed["language"]) == "zh", "the lang argument resolves to a locale")
+	_check(str(parsed["colorblind"]) == "deuteranopia", "colorblind=1 turns on the review mode")
+	_check(int(parsed["reduce_motion"]) == 0, "reduce-motion=0 is kept as off")
+	_check(str(parsed["script"]) == "right,right,up", "the script argument keeps its sequence")
+	_check((parsed["warnings"] as Array).is_empty(), "a complete boot argument set raises no warning")
+
+	var level_index := MAIN_SCRIPT.resolve_boot_level(parsed, paths)
+	_check(level_index == 9, "a numeric level argument resolves to its position")
+	_check(
+		MAIN_SCRIPT.boot_opens_level(str(parsed["screen"]), level_index),
+		"the level argument wins when --level and --screen=play are both given"
+	)
+	var screen_only := MAIN_SCRIPT.parse_boot_arguments(["--screen=settings", "--level=010"])
+	_check(
+		not MAIN_SCRIPT.boot_opens_level(
+			str(screen_only["screen"]), MAIN_SCRIPT.resolve_boot_level(screen_only, paths)
+		),
+		"an explicit other screen keeps that screen instead of opening the level"
+	)
+	_check(
+		str(MAIN_SCRIPT.parse_boot_arguments(["--screen=level_select"])["screen"]) == "level-select",
+		"the level_select screen name resolves to the level select"
+	)
+	_check(
+		MAIN_SCRIPT.resolve_boot_level(
+			MAIN_SCRIPT.parse_boot_arguments(["--level=level-002"]), paths
+		) == 1,
+		"a level id argument resolves to its position"
+	)
+	_check(
+		MAIN_SCRIPT.resolve_boot_level(
+			MAIN_SCRIPT.parse_boot_arguments(["--level=missing"]), paths
+		) == MAIN_SCRIPT.BOOT_FLAG_UNSET,
+		"an invalid level argument names no level"
+	)
+
+	var rejected := MAIN_SCRIPT.parse_boot_arguments(
+		["--bogus=1", "--screen=bogus", "--lang=fr", "--colorblind=2", "--reduce-motion=yes"]
+	)
+	_check(
+		(rejected["warnings"] as Array).size() == 5,
+		"each unknown or unsupported boot argument raises one warning"
+	)
+	_check(
+		str((rejected["warnings"] as Array)[0]).contains("--bogus=1"),
+		"the unknown-argument warning names the argument"
+	)
+	_check(
+		str(rejected["screen"]).is_empty()
+		and str(rejected["language"]).is_empty()
+		and str(rejected["colorblind"]).is_empty()
+		and int(rejected["reduce_motion"]) == MAIN_SCRIPT.BOOT_FLAG_UNSET,
+		"an unsupported boot value is ignored"
+	)
+
+	var path := "user://test-boot-aids-save.json"
+	_clean_save_test_files(path)
+	var store := SaveStoreClass.new()
+	store.configure(path)
+	store.load_profile()
+	store.ensure_unlocked("level-001")
+	_check(store.save_now(), "the boot-aid fixture writes its profile once")
+	var before := _read_test_text(path)
+	var overrides := MAIN_SCRIPT.settings_with_boot_overrides(store.settings(), parsed)
+	_check(str(overrides["language"]) == "zh", "the language override reaches the session settings")
+	_check(
+		str(overrides["colorblind_mode"]) == "deuteranopia",
+		"the colorblind override reaches the session settings"
+	)
+	_check(bool(overrides["reduce_motion"]) == false, "reduce-motion=0 reaches the session settings")
+	_check(
+		str(store.settings()["language"]) == "en"
+		and str(store.settings()["colorblind_mode"]) == "off",
+		"the boot overrides leave the stored settings untouched"
+	)
+	_check(_read_test_text(path) == before, "the boot overrides write no save file")
+	store.free()
+	_clean_save_test_files(path)
+
+	var pair := _make_controller(_make_level(BASIC_TILES))
+	var controller: GameplayControllerClass = pair[0]
+	var scripted := MAIN_SCRIPT.parse_boot_arguments(["--level=001", "--script=right,right"])
+	_check(
+		controller.apply_move_script(str(scripted["script"])),
+		"the parsed script sequence applies without a rejected move"
+	)
+	_check(
+		controller.session.moves == 2 and controller.session.pushes == 1,
+		"the parsed script sequence produces the expected move and push counters"
+	)
+	_check(
+		controller.session.player == Vector2i(4, 3) and controller.session.boxes[0] == Vector2i(5, 3),
+		"the parsed script sequence reaches the expected cells"
+	)
+	controller.free()
+	pair[1].free()
 
 
 func _test_victory_panel() -> void:

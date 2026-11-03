@@ -1,0 +1,5 @@
+[capture] target: .\production\qa\evidence\boot-aids\script.png
+[capture] user arguments: --level=001 --script=right,right
+[capture] waiting up to 60s for the PNG
+$ godot --path . -- --studio-capture=.\production\qa\evidence\boot-aids\script.png --level=001 --script=right,right
+[capture] OK: .\production\qa\evidence\boot-aids\script.png (42341 bytes)

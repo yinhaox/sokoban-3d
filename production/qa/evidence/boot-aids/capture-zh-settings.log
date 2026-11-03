@@ -1,0 +1,5 @@
+[capture] target: .\production\qa\evidence\boot-aids\zh-settings.png
+[capture] user arguments: --screen=settings --lang=zh
+[capture] waiting up to 60s for the PNG
+$ godot --path . -- --studio-capture=.\production\qa\evidence\boot-aids\zh-settings.png --screen=settings --lang=zh
+[capture] OK: .\production\qa\evidence\boot-aids\zh-settings.png (38597 bytes)
