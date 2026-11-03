@@ -1,0 +1,5 @@
+[capture] target: C:\Users\yinha\.dsh\state\superagent-sokoban\work\boot-aids-8f12e74d1c21\production\qa\evidence\boot-aids\play-level-010.png
+[capture] user arguments: --level=010
+[capture] waiting up to 60s for the PNG
+$ D:/SteamLibrary/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe --path . -- --studio-capture=C:\Users\yinha\.dsh\state\superagent-sokoban\work\boot-aids-8f12e74d1c21\production\qa\evidence\boot-aids\play-level-010.png --level=010
+[capture] OK: C:\Users\yinha\.dsh\state\superagent-sokoban\work\boot-aids-8f12e74d1c21\production\qa\evidence\boot-aids\play-level-010.png (57719 bytes)
