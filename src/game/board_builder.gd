@@ -38,11 +38,36 @@ const RING_OUTER_RADIUS := 0.30
 const PLATE_SIZE_RATIO := 0.90
 ## Alpha a faded wall's top cap keeps, so a faded border wall still draws an
 ## outline instead of disappearing (issue #9).
-const OCCLUSION_CAP_ALPHA := 0.55
+const OCCLUSION_CAP_ALPHA := 0.70
 ## How far a crate settles when it comes to rest on a goal plate, so the lit
 ## plate and the settle are both visible (design/core-rules.md "the crate
 ## settles").
 const CRATE_GOAL_SINK := 0.03
+## One faint line per cell edge. The line is the floor tone darkened by
+## `GRID_DARKEN_RATIO`, which keeps the value step inside the 8% the story
+## allows while staying visible under the flat directional light.
+const GRID_LINE_WIDTH := 0.04
+const GRID_LINE_HEIGHT := 0.002
+const GRID_LIFT := 0.001
+const GRID_DARKEN_RATIO := 0.07
+const GRID_MAX_DARKEN_RATIO := 0.08
+## A crisp top border plus four vertical edge strips. They stay opaque while the
+## wall body fades, so a faded wall still reads as a wall instead of glass.
+const WALL_OUTLINE_WIDTH := 0.035
+const WALL_OUTLINE_HEIGHT := 0.008
+## Dark plinth around the room. Its top sits just under the floor plane, so it
+## fills the void under the border walls and shows as a 0.05-unit rim.
+const BASE_THICKNESS := 0.05
+const BASE_MARGIN := 0.12
+const BASE_TOP_OFFSET := 0.001
+## Soft contact shadow: three concentric discs, widest and faintest first. The
+## radius multipliers and alpha multipliers keep the falloff soft without a
+## texture.
+const CONTACT_SHADOW_RADII := [1.22, 1.10, 1.0]
+const CONTACT_SHADOW_ALPHAS := [0.35, 0.60, 1.0]
+const CONTACT_SHADOW_DISC_HEIGHT := 0.001
+const CONTACT_SHADOW_LAYER_LIFT := 0.0002
+const CONTACT_SHADOW_LIFT := 0.0015
 
 @export var wall_height: float = 1.0
 @export var floor_thickness: float = 0.1
@@ -50,6 +75,21 @@ const CRATE_GOAL_SINK := 0.03
 @export var player_radius: float = 0.28
 @export var player_height: float = 0.55
 @export var plate_thickness: float = 0.02
+
+@export_group("Visual polish")
+## Value step between the floor and its grid lines; clamped to the story's 8%.
+@export_range(0.0, 0.08, 0.01) var grid_darken_ratio: float = GRID_DARKEN_RATIO
+## The grid follows the accessibility reduce-motion setting: it is hidden when
+## `set_reduce_motion(true)` is applied. These two are the build-time defaults;
+## the runtime setters below can still toggle the groups on a live board.
+@export var floor_grid_enabled: bool = true
+@export var wall_outline_enabled: bool = true
+@export var wall_outline_color: Color = Color("#3A4454")
+@export var contact_shadow_color: Color = Color("#000000")
+@export_range(0.0, 0.4, 0.01) var contact_shadow_alpha: float = 0.18
+@export var room_base_color: Color = Color("#1A1F29")
+@export_range(0.02, 0.2, 0.01) var room_base_thickness: float = BASE_THICKNESS
+@export_range(0.0, 0.3, 0.01) var room_base_margin: float = BASE_MARGIN
 
 @export_group("Palette")
 @export var floor_color: Color = Color("#C9B79C")
@@ -102,6 +142,9 @@ var _goal_ring_material: StandardMaterial3D
 var _marker_material: StandardMaterial3D
 var _player_material: StandardMaterial3D
 var _colorblind_mark_material: StandardMaterial3D
+var _grid_material: StandardMaterial3D
+var _wall_outline_material: StandardMaterial3D
+var _room_base_material: StandardMaterial3D
 
 ## Wall bookkeeping for the occlusion fade: cell -> [side, cap] instances and
 ## the per-wall transparent material variants.
@@ -110,6 +153,18 @@ var _wall_fade_side: Dictionary = {}
 var _wall_fade_top: Dictionary = {}
 var _wall_tweens: Dictionary = {}
 var _faded_walls: Dictionary = {}
+
+## Presentation polish bookkeeping: the generated grid, outline and shadow
+## nodes. The visibility flags survive a rebuild so a settings change does not
+## need a second build.
+var _grid_root: Node3D
+var _grid_nodes: Array[MeshInstance3D] = []
+var _wall_outlines_root: Node3D
+var _wall_outline_nodes: Array[MeshInstance3D] = []
+var _contact_shadows: Array[Node3D] = []
+var _floor_grid_visible: bool = true
+var _wall_outlines_visible: bool = true
+var _reduce_motion: bool = false
 
 
 ## Cell centre in the builder's local space. The grid is centred on the node, so
@@ -160,11 +215,16 @@ func build(level: LevelDataScript) -> void:
 	_columns = level.columns
 	_rows = level.rows
 	_create_materials()
+	_build_room_base(level)
 	_build_floor(level)
+	_build_floor_grid(level)
 	_build_goals(level)
 	_build_walls(level)
 	_build_crates(level)
 	_build_player(level)
+	_apply_floor_grid_visibility()
+	if _wall_outlines_root != null:
+		_wall_outlines_root.visible = _wall_outlines_visible and wall_outline_enabled
 
 
 ## Removes every generated node and resets the wall-fade bookkeeping.
@@ -186,6 +246,11 @@ func clear() -> void:
 	_wall_fade_top.clear()
 	_wall_tweens.clear()
 	_faded_walls.clear()
+	_grid_root = null
+	_grid_nodes.clear()
+	_wall_outlines_root = null
+	_wall_outline_nodes.clear()
+	_contact_shadows.clear()
 	player_cell = Vector2i(-1, -1)
 
 
@@ -242,6 +307,62 @@ func colorblind_markers_visible() -> bool:
 	return true
 
 
+## Hides the decorative floor grid while the accessibility reduce-motion setting
+## is on, per design/accessibility.md "Motion, flashing and timing". The flag is
+## kept across a rebuild, so a level change keeps the setting.
+func set_reduce_motion(enabled: bool) -> void:
+	_reduce_motion = enabled
+	_apply_floor_grid_visibility()
+
+
+func is_reduce_motion() -> bool:
+	return _reduce_motion
+
+
+## Shows or hides the floor grid itself. The grid stays hidden while reduce
+## motion is on.
+func set_floor_grid_visible(enabled: bool) -> void:
+	_floor_grid_visible = enabled
+	_apply_floor_grid_visibility()
+
+
+## Whether the generated grid is on screen right now.
+func is_floor_grid_visible() -> bool:
+	return _grid_root != null and _grid_root.visible
+
+
+func grid_line_count() -> int:
+	return _grid_nodes.size()
+
+
+## The floor tone behind the grid line: the same hue and saturation, darkened by
+## at most `GRID_MAX_DARKEN_RATIO`, so the value step never exceeds 8%.
+static func grid_color_for(floor_tone: Color, darken_ratio: float) -> Color:
+	return floor_tone.darkened(clampf(darken_ratio, 0.0, GRID_MAX_DARKEN_RATIO))
+
+
+## Turns every wall's top border and edge outline on or off. The outlines stay
+## opaque while the wall body fades, so a faded wall still reads as a wall.
+func set_wall_outlines_enabled(enabled: bool) -> void:
+	_wall_outlines_visible = enabled
+	if _wall_outlines_root != null:
+		_wall_outlines_root.visible = enabled and wall_outline_enabled
+
+
+func wall_outlines_enabled() -> bool:
+	return _wall_outlines_visible
+
+
+func wall_outline_count() -> int:
+	return _wall_outline_nodes.size()
+
+
+## Number of soft contact shadow groups: one per crate, one per goal plate and
+## one under the player.
+func contact_shadow_count() -> int:
+	return _contact_shadows.size()
+
+
 ## World position of the player piece for a cell, matching `_build_player()`.
 func player_world_position(cell: Vector2i) -> Vector3:
 	var centre := cell_to_world(cell, _columns, _rows)
@@ -283,6 +404,9 @@ func set_crate_on_goal(index: int, on_goal: bool) -> void:
 			(child as MeshInstance3D).material_override = (
 				_crate_material if on_goal else _marker_material
 			)
+	var shadow := crate.get_node_or_null("ContactShadow") as Node3D
+	if shadow != null:
+		shadow.position.y = _crate_shadow_local_y(on_goal)
 
 
 ## Lights or dims one goal plate. The filled material is the emissive palette
@@ -323,15 +447,16 @@ func cell_centre(cell: Vector2i) -> Vector3:
 
 
 ## Axis-aligned bound of the whole room in this node's local space: the outer
-## faces of the border walls, from the underside of the floor slab to the top of
-## the wall cap. The camera rig frames this box.
+## faces of the border walls and the dark base around them, from the underside of
+## the base to the top of the wall cap. The camera rig frames this box.
 func room_bounds() -> AABB:
-	var half_width := float(_columns) * CELL_SIZE * 0.5
-	var half_depth := float(_rows) * CELL_SIZE * 0.5
+	var half_width := float(_columns) * CELL_SIZE * 0.5 + room_base_margin
+	var half_depth := float(_rows) * CELL_SIZE * 0.5 + room_base_margin
 	var top := wall_height + CAP_HEIGHT
+	var bottom := -BASE_TOP_OFFSET - room_base_thickness
 	return AABB(
-		Vector3(-half_width, -floor_thickness, -half_depth),
-		Vector3(half_width * 2.0, top + floor_thickness, half_depth * 2.0)
+		Vector3(-half_width, bottom, -half_depth),
+		Vector3(half_width * 2.0, top - bottom, half_depth * 2.0)
 	)
 
 
@@ -449,6 +574,9 @@ func _create_materials() -> void:
 	_marker_material = _make_material(_effective_color(crate_on_goal_color, colorblind_marker_color))
 	_player_material = _make_material(_effective_color(player_color, colorblind_player_color))
 	_colorblind_mark_material = _make_material(colorblind_marker_color)
+	_grid_material = _make_material(grid_color_for(floor_color, grid_darken_ratio))
+	_wall_outline_material = _make_material(wall_outline_color)
+	_room_base_material = _make_material(room_base_color)
 
 
 ## The palette entry for the current colour mode.
@@ -495,6 +623,134 @@ func _make_transparent_material(color: Color) -> StandardMaterial3D:
 	return material
 
 
+## A dark plinth around and under the room. Its top sits just below the floor
+## plane, so it fills the void under the faded border walls without z-fighting
+## the floor slabs.
+func _build_room_base(level: LevelDataScript) -> void:
+	var size := Vector3(
+		float(level.columns) * CELL_SIZE + room_base_margin * 2.0,
+		room_base_thickness,
+		float(level.rows) * CELL_SIZE + room_base_margin * 2.0
+	)
+	var centre := Vector3(0.0, -BASE_TOP_OFFSET - room_base_thickness * 0.5, 0.0)
+	_add_box(size, centre, _room_base_material, "RoomBase")
+
+
+## One faint line per shared floor-cell edge. Edges against a wall or the room
+## border are left to the wall itself, so the grid never draws over a wall.
+func _build_floor_grid(level: LevelDataScript) -> void:
+	_grid_root = Node3D.new()
+	_grid_root.name = "FloorGrid"
+	add_child(_grid_root)
+	var east_line := Vector3(GRID_LINE_WIDTH, GRID_LINE_HEIGHT, CELL_SIZE)
+	var south_line := Vector3(CELL_SIZE, GRID_LINE_HEIGHT, GRID_LINE_WIDTH)
+	for row in level.rows:
+		for column in level.columns:
+			var cell := Vector2i(column, row)
+			if level.cell_at(cell) == LevelDataScript.Cell.WALL:
+				continue
+			var centre := cell_to_world(cell, _columns, _rows)
+			centre.y = GRID_LIFT
+			if _is_floor_cell(level, Vector2i(column + 1, row)):
+				_add_grid_line(east_line, centre + Vector3(CELL_SIZE * 0.5, 0.0, 0.0))
+			if _is_floor_cell(level, Vector2i(column, row + 1)):
+				_add_grid_line(south_line, centre + Vector3(0.0, 0.0, CELL_SIZE * 0.5))
+
+
+func _is_floor_cell(level: LevelDataScript, cell: Vector2i) -> bool:
+	if cell.x < 0 or cell.y < 0 or cell.x >= level.columns or cell.y >= level.rows:
+		return false
+	return level.cell_at(cell) != LevelDataScript.Cell.WALL
+
+
+func _add_grid_line(size: Vector3, centre: Vector3) -> void:
+	var node_name := "GridLine_%d" % _grid_nodes.size()
+	var line := _add_box_to(_grid_root, size, centre, _grid_material, node_name)
+	line.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_grid_nodes.append(line)
+
+
+func _apply_floor_grid_visibility() -> void:
+	if _grid_root != null:
+		_grid_root.visible = _floor_grid_visible and floor_grid_enabled and not _reduce_motion
+
+
+## A wall's top border and four vertical edges. They are built once per wall and
+## are never faded, so a ghosted wall keeps a crisp silhouette.
+func _build_wall_outline(base: Vector3, cell: Vector2i) -> void:
+	if _wall_outlines_root == null:
+		_wall_outlines_root = Node3D.new()
+		_wall_outlines_root.name = "WallOutlines"
+		add_child(_wall_outlines_root)
+	var corner := CELL_SIZE * 0.5 - WALL_OUTLINE_WIDTH * 0.5
+	var top_y := wall_height + CAP_HEIGHT + WALL_OUTLINE_HEIGHT * 0.5
+	var side_bar := Vector3(CELL_SIZE, WALL_OUTLINE_HEIGHT, WALL_OUTLINE_WIDTH)
+	var end_bar := Vector3(
+		WALL_OUTLINE_WIDTH, WALL_OUTLINE_HEIGHT, CELL_SIZE - WALL_OUTLINE_WIDTH * 2.0
+	)
+	_add_wall_outline_box(side_bar, Vector3(base.x, top_y, base.z - corner), cell, "N")
+	_add_wall_outline_box(side_bar, Vector3(base.x, top_y, base.z + corner), cell, "S")
+	_add_wall_outline_box(end_bar, Vector3(base.x - corner, top_y, base.z), cell, "W")
+	_add_wall_outline_box(end_bar, Vector3(base.x + corner, top_y, base.z), cell, "E")
+	var edge_height := wall_height + CAP_HEIGHT
+	var edge_size := Vector3(WALL_OUTLINE_WIDTH, edge_height, WALL_OUTLINE_WIDTH)
+	for x_sign in [-1.0, 1.0]:
+		for z_sign in [-1.0, 1.0]:
+			var edge_centre := Vector3(
+				base.x + x_sign * corner,
+				edge_height * 0.5,
+				base.z + z_sign * corner
+			)
+			_add_wall_outline_box(
+				edge_size, edge_centre, cell, "%.0f_%.0f" % [x_sign, z_sign]
+			)
+
+
+func _add_wall_outline_box(
+	size: Vector3, centre: Vector3, cell: Vector2i, suffix: String
+) -> void:
+	var node_name := "WallOutline_%d_%d_%s" % [cell.x, cell.y, suffix]
+	var node := _add_box_to(_wall_outlines_root, size, centre, _wall_outline_material, node_name)
+	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_wall_outline_nodes.append(node)
+
+
+## Three stacked discs under an actor or plate. The widest layer is faintest, so
+## the edge of the shadow falls off softly without a texture.
+func _add_contact_shadow(parent: Node3D, local_y: float, radius: float) -> void:
+	var container := Node3D.new()
+	container.name = "ContactShadow"
+	container.position = Vector3(0.0, local_y, 0.0)
+	parent.add_child(container)
+	for index: int in CONTACT_SHADOW_RADII.size():
+		var shadow_radius: float = radius * float(CONTACT_SHADOW_RADII[index])
+		var alpha: float = contact_shadow_alpha * float(CONTACT_SHADOW_ALPHAS[index])
+		var colour := Color(
+			contact_shadow_color.r, contact_shadow_color.g, contact_shadow_color.b, alpha
+		)
+		var mesh := CylinderMesh.new()
+		mesh.top_radius = shadow_radius
+		mesh.bottom_radius = shadow_radius
+		mesh.height = CONTACT_SHADOW_DISC_HEIGHT
+		var layer := MeshInstance3D.new()
+		layer.name = "ShadowLayer_%d" % index
+		layer.mesh = mesh
+		layer.material_override = _make_transparent_material(colour)
+		layer.position = Vector3(0.0, CONTACT_SHADOW_LAYER_LIFT * float(index), 0.0)
+		layer.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		container.add_child(layer)
+	_contact_shadows.append(container)
+
+
+func _crate_shadow_local_y(on_goal: bool) -> float:
+	var sink := CRATE_GOAL_SINK if on_goal else 0.0
+	return -crate_size * 0.5 - ACTOR_LIFT + CONTACT_SHADOW_LIFT + sink
+
+
+func _player_shadow_local_y() -> float:
+	return -_player_mesh_height() * 0.5 - ACTOR_LIFT + CONTACT_SHADOW_LIFT
+
+
 func _build_floor(level: LevelDataScript) -> void:
 	var size := Vector3(CELL_SIZE, floor_thickness, CELL_SIZE)
 	for row in level.rows:
@@ -527,6 +783,11 @@ func _build_goals(level: LevelDataScript) -> void:
 		ring_centre.y = plate_top + ring_radius
 		_add_torus(ring_centre, _goal_ring_material, "GoalRing_%d_%d" % [cell.x, cell.y])
 		_add_goal_check(cell, plate_top)
+		_add_contact_shadow(
+			_goal_plates[cell] as Node3D,
+			-plate_thickness * 0.5 - PLATE_LIFT + CONTACT_SHADOW_LIFT,
+			CELL_SIZE * PLATE_SIZE_RATIO * 0.5
+		)
 
 
 ## Two angled bars that read as a check mark on an empty plate, so a goal is
@@ -574,6 +835,7 @@ func _build_walls(level: LevelDataScript) -> void:
 			_wall_nodes[cell] = [side, cap]
 			_wall_fade_side[cell] = _make_transparent_material(wall_side_color)
 			_wall_fade_top[cell] = _make_transparent_material(wall_top_color)
+			_build_wall_outline(base, cell)
 
 
 func _build_crates(level: LevelDataScript) -> void:
@@ -592,6 +854,7 @@ func _build_crates(level: LevelDataScript) -> void:
 		var marker := _crate_material if on_goal else _marker_material
 		_add_crate_cross(crate, marker)
 		_add_crate_finial(crate, index)
+		_add_contact_shadow(crate, _crate_shadow_local_y(on_goal), crate_size * 0.5)
 
 
 ## A raised post above the crate cross, visible only in colorblind mode, so the
@@ -642,6 +905,7 @@ func _build_player(level: LevelDataScript) -> void:
 	)
 	nub.visible = _colorblind_mode
 	_colorblind_markers.append(nub)
+	_add_contact_shadow(instance, _player_shadow_local_y(), player_radius)
 
 
 ## CapsuleMesh needs a height of at least two radii.
@@ -666,6 +930,12 @@ func _add_box_child(
 func _add_box(
 	size: Vector3, centre: Vector3, material: Material, node_name: String
 ) -> MeshInstance3D:
+	return _add_box_to(self, size, centre, material, node_name)
+
+
+func _add_box_to(
+	parent: Node3D, size: Vector3, centre: Vector3, material: Material, node_name: String
+) -> MeshInstance3D:
 	var mesh := BoxMesh.new()
 	mesh.size = size
 	var instance := MeshInstance3D.new()
@@ -673,7 +943,7 @@ func _add_box(
 	instance.mesh = mesh
 	instance.material_override = material
 	instance.position = centre
-	add_child(instance)
+	parent.add_child(instance)
 	return instance
 
 

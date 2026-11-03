@@ -207,6 +207,7 @@ func _init() -> void:
 	_test_camera_rig()
 	_test_camera_framing()
 	_test_wall_fade_outline()
+	_test_visual_polish()
 	_test_gameplay_input_mapping()
 	_test_gameplay_controller()
 	_test_gameplay_win()
@@ -1005,22 +1006,109 @@ func _test_wall_fade_outline() -> void:
 	var board := BoardBuilderClass.new()
 	board.build(level)
 	var bounds := board.room_bounds()
+	var margin: float = board.room_base_margin
 	_check(
-		is_equal_approx(bounds.position.x, -3.5) and is_equal_approx(bounds.position.z, -3.5),
-		"the room bounds start at the outer face of the border walls"
+		is_equal_approx(bounds.position.x, -3.5 - margin)
+		and is_equal_approx(bounds.position.z, -3.5 - margin),
+		"the room bounds include the dark base around the border walls"
 	)
 	_check(
-		is_equal_approx(bounds.size.x, 7.0) and is_equal_approx(bounds.size.z, 7.0),
-		"the room bounds cover the whole 7x7 footprint"
+		is_equal_approx(bounds.size.x, 7.0 + margin * 2.0)
+		and is_equal_approx(bounds.size.z, 7.0 + margin * 2.0),
+		"the room bounds cover the whole 7x7 room plus the base rim"
 	)
 	_check(
-		is_equal_approx(bounds.position.y, -board.floor_thickness),
-		"the room bounds include the floor slab"
+		is_equal_approx(
+			bounds.position.y, -BoardBuilderClass.BASE_TOP_OFFSET - board.room_base_thickness
+		),
+		"the room bounds reach the bottom of the dark base"
 	)
 	_check(
 		is_equal_approx(bounds.end.y, board.wall_height + BoardBuilderClass.CAP_HEIGHT),
 		"the room bounds reach the top of the wall cap"
 	)
+	board.free()
+
+
+func _test_visual_polish() -> void:
+	var level := _make_level(BASIC_TILES)
+	var board := BoardBuilderClass.new()
+	board.build(level)
+
+	# Floor grid: one line per shared edge, a value step at most 8% from the floor.
+	var grid := board.get_node_or_null("FloorGrid") as Node3D
+	_check(grid != null and grid.visible, "the board builds a visible floor grid")
+	_check(board.grid_line_count() > 0, "the floor grid carries at least one line")
+	var grid_colour := BoardBuilderClass.grid_color_for(
+		board.floor_color, board.grid_darken_ratio
+	)
+	_check(
+		absf(grid_colour.v - board.floor_color.v) <= BoardBuilderClass.GRID_MAX_DARKEN_RATIO,
+		"the grid line is at most an 8% value step from the floor"
+	)
+	board.set_reduce_motion(true)
+	_check(not board.is_floor_grid_visible(), "reduce motion hides the floor grid")
+	_check(grid != null and not grid.visible, "the grid node is hidden with reduce motion on")
+	board.set_reduce_motion(false)
+	_check(board.is_floor_grid_visible(), "turning reduce motion off shows the grid again")
+
+	# Wall outline: built for every wall, with a visibility toggle.
+	var outlines := board.get_node_or_null("WallOutlines") as Node3D
+	_check(outlines != null and outlines.visible, "the board builds a visible wall outline group")
+	_check(
+		board.wall_outline_count() == board.wall_cells().size() * 8,
+		"every wall has a top border and four edge strips"
+	)
+	board.set_wall_outlines_enabled(false)
+	_check(not board.wall_outlines_enabled(), "the wall outline toggle reports off")
+	_check(outlines != null and not outlines.visible, "the outline toggle hides every outline")
+	board.set_wall_outlines_enabled(true)
+	_check(outlines != null and outlines.visible, "the outline toggle shows the outlines again")
+
+	# Contact shadows: one group under the player, every crate and every goal.
+	_check(
+		board.contact_shadow_count() == level.box_starts.size() + level.goals.size() + 1,
+		"every crate, goal and the player carry one contact shadow group"
+	)
+	var player_shadow := board.get_node_or_null("Player/ContactShadow") as Node3D
+	var crate_shadow := board.crate_node(0).get_node_or_null("ContactShadow") as Node3D
+	var goal_shadow := board.get_node_or_null("Goal_5_1/ContactShadow") as Node3D
+	_check(player_shadow != null, "the player carries a contact shadow")
+	_check(crate_shadow != null, "a crate carries a contact shadow")
+	_check(goal_shadow != null, "a goal plate carries a contact shadow")
+	if player_shadow != null:
+		var layer := player_shadow.get_child(0) as MeshInstance3D
+		var material := layer.material_override as StandardMaterial3D
+		_check(
+			material != null and material.albedo_color.a > 0.0 and material.albedo_color.a < 1.0,
+			"a contact shadow layer is a soft partial-alpha disc"
+		)
+	if crate_shadow != null:
+		_check(
+			crate_shadow.position.y <= -board.crate_size * 0.5,
+			"a crate's contact shadow sits below the crate body"
+		)
+	board.set_crate_on_goal(0, true)
+	if crate_shadow != null:
+		_check(
+			crate_shadow.position.y > -board.crate_size * 0.5,
+			"a crate on a goal lifts its contact shadow back to the floor plane"
+		)
+
+	# Room base: a 0.05-unit dark plinth around and under the room.
+	var base := board.get_node_or_null("RoomBase") as MeshInstance3D
+	_check(base != null, "the room carries a dark base")
+	if base != null:
+		var base_mesh := base.mesh as BoxMesh
+		_check(
+			base_mesh != null
+			and is_equal_approx(base_mesh.size.y, BoardBuilderClass.BASE_THICKNESS),
+			"the base is 0.05 units thick"
+		)
+		_check(
+			base_mesh != null and base_mesh.size.x > 7.0 and base_mesh.size.z > 7.0,
+			"the base extends past the outer wall faces"
+		)
 	board.free()
 
 
