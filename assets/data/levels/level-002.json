@@ -1,0 +1,21 @@
+{
+  "id": "level-002",
+  "name": "Turn the Corner",
+  "name_key": "level_002_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 1,
+  "par_moves": 14,
+  "par_pushes": 6,
+  "columns": 8,
+  "rows": 7,
+  "tiles": [
+    "########",
+    "#______#",
+    "#______#",
+    "#_$@___#",
+    "#____._#",
+    "#______#",
+    "########"
+  ],
+  "notes": "Walk around the crate, push it right three times, then step below it and push it down onto the plate."
+}

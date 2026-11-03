@@ -1,0 +1,21 @@
+{
+  "id": "level-003",
+  "name": "Two of a Kind",
+  "name_key": "level_003_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 2,
+  "par_moves": 24,
+  "par_pushes": 9,
+  "columns": 9,
+  "rows": 7,
+  "tiles": [
+    "#########",
+    "#_______#",
+    "#_$___._#",
+    "#___$___#",
+    "#_@___._#",
+    "#_______#",
+    "#########"
+  ],
+  "notes": "Two crates, two plates. Finish the lower crate first, then push the upper crate along its row."
+}
