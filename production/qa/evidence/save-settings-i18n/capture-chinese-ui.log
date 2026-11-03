@@ -1,0 +1,6 @@
+[capture] removed stale file: C:\Users\yinha\.dsh\state\superagent-sokoban\work\save-settings-i18n-a89ec3c35a53\production\qa\evidence\save-settings-i18n\chinese-ui.png
+[capture] target: C:\Users\yinha\.dsh\state\superagent-sokoban\work\save-settings-i18n-a89ec3c35a53\production\qa\evidence\save-settings-i18n\chinese-ui.png
+[capture] user arguments: --screen=level-select --language=zh --save=user://evidence-save-zh.json --fresh-save
+[capture] waiting up to 60s for the PNG
+$ D:/SteamLibrary/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe --path . -- --studio-capture=C:\Users\yinha\.dsh\state\superagent-sokoban\work\save-settings-i18n-a89ec3c35a53\production\qa\evidence\save-settings-i18n\chinese-ui.png --screen=level-select --language=zh --save=user://evidence-save-zh.json --fresh-save
+[capture] OK: C:\Users\yinha\.dsh\state\superagent-sokoban\work\save-settings-i18n-a89ec3c35a53\production\qa\evidence\save-settings-i18n\chinese-ui.png (32910 bytes)

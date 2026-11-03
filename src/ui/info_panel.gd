@@ -1,15 +1,13 @@
 class_name InfoPanel
 extends CanvasLayer
 
-## A read-only placeholder screen: a title, one explanation and a Back button.
-## Issue #13 asks for Settings and Credits in the shell, so Settings uses this
-## panel to say that the real screen arrives in a later story, and Credits lists
-## the project credits. The boot scene sets the two strings; the panel emits
-## `back_requested` and owns nothing else.
+## A read-only placeholder screen: a title, one body and a Back button. Credits
+## uses it; the boot scene sets the two translated strings and re-translates them
+## on a language switch. The panel emits `back_requested` and owns nothing else.
 
 signal back_requested
 
-const BACK_TEXT := "Back"
+const BACK_KEY := "ui_common_back"
 
 var _title: Label
 var _body: Label
@@ -36,7 +34,14 @@ func focus_default() -> void:
 		_back.grab_focus()
 
 
+func refresh_texts() -> void:
+	_bind()
+	if _bound and _back != null:
+		_back.text = tr(BACK_KEY)
+
+
 func _bind() -> void:
+	Localization.install()
 	if _bound:
 		return
 	_bound = true
@@ -52,11 +57,11 @@ func _bind() -> void:
 	if _title == null or _body == null or _back == null:
 		push_error("info_panel: the title, body or back button is missing")
 		return
-	_back.text = BACK_TEXT
 	_back.custom_minimum_size = Vector2(200, UiTheme.MIN_TARGET_PX)
 	var controls: Array[Control] = [_back]
 	UiFocus.wire_vertical(controls)
 	_back.pressed.connect(_on_back_pressed)
+	refresh_texts()
 
 
 func _on_back_pressed() -> void:

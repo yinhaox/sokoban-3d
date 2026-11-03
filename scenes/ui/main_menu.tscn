@@ -53,6 +53,12 @@ horizontal_alignment = 1
 [node name="Spacer" type="Control" parent="Root/Content/Margin/Layout"]
 custom_minimum_size = Vector2(0, 24)
 
+[node name="Notice" type="Label" parent="Root/Content/Margin/Layout"]
+theme_type_variation = &"MutedLabel"
+horizontal_alignment = 1
+autowrap_mode = 2
+visible = false
+
 [node name="Buttons" type="VBoxContainer" parent="Root/Content/Margin/Layout"]
 size_flags_horizontal = 4
 

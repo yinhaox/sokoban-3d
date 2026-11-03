@@ -39,12 +39,30 @@ const HUD_MARGIN_PX := 6
 const VBOX_SEPARATION_PX := 12
 const HBOX_SEPARATION_PX := 8
 const GRID_SEPARATION_PX := 16
+## The settings rows are compact so all seven settings fit 1152x648 without
+## scrolling while each interactive control still keeps `min_target_px`.
+const COMPACT_ROW_SEPARATION_PX := 2
+
+## System font fallbacks for the Chinese UI, per design/accessibility.md "Text
+## and UI size". The first named family the OS has renders both Latin and CJK, so
+## no font file is shipped. `allow_system_fallback` covers a machine where the
+## named families are absent.
+const UI_FONT_NAMES: Array[String] = [
+	"Microsoft YaHei UI",
+	"Microsoft YaHei",
+	"Noto Sans CJK SC",
+	"Noto Sans SC",
+	"Source Han Sans SC",
+	"SimHei",
+	"sans-serif",
+]
 
 
 ## Builds the shared theme. Called once by the boot scene; safe to call again in
 ## a test because it creates a fresh resource every time.
 static func build() -> Theme:
 	var theme := Theme.new()
+	theme.default_font = _ui_font()
 	theme.default_font_size = FONT_BODY
 	_style_buttons(theme)
 	_style_labels(theme)
@@ -53,6 +71,14 @@ static func build() -> Theme:
 	theme.set_color("filled", "StarRow", STAR_FILLED)
 	theme.set_color("empty", "StarRow", STAR_EMPTY)
 	return theme
+
+
+## One system font for Latin and CJK, so a Chinese label never renders tofu.
+static func _ui_font() -> SystemFont:
+	var font := SystemFont.new()
+	font.font_names = PackedStringArray(UI_FONT_NAMES)
+	font.allow_system_fallback = true
+	return font
 
 
 static func _style_buttons(theme: Theme) -> void:
@@ -103,6 +129,10 @@ static func _style_containers(theme: Theme) -> void:
 	_style_margin(theme, "CardMargin", CARD_MARGIN_PX)
 	theme.set_type_variation("HudMargin", "MarginContainer")
 	_style_margin(theme, "HudMargin", HUD_MARGIN_PX)
+	theme.set_type_variation("CompactMargin", "MarginContainer")
+	_style_margin(theme, "CompactMargin", CARD_MARGIN_PX * 2)
+	theme.set_type_variation("CompactRows", "VBoxContainer")
+	theme.set_constant("separation", "CompactRows", COMPACT_ROW_SEPARATION_PX)
 	theme.set_constant("separation", "VBoxContainer", VBOX_SEPARATION_PX)
 	theme.set_constant("separation", "HBoxContainer", HBOX_SEPARATION_PX)
 	theme.set_constant("h_separation", "GridContainer", GRID_SEPARATION_PX)
