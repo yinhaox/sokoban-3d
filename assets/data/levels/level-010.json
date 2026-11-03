@@ -1,0 +1,23 @@
+{
+  "id": "level-010",
+  "name": "Three's a Crowd",
+  "name_key": "level_010_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 5,
+  "par_moves": 31,
+  "par_pushes": 12,
+  "columns": 10,
+  "rows": 8,
+  "tiles": [
+    "##########",
+    "#________#",
+    "#_$_$_$__#",
+    "#________#",
+    "#@_#_#_#_#",
+    "#________#",
+    "#_._._.__#",
+    "##########"
+  ],
+  "notes": "Three crates in a row, three plates below. The pillars force the walk between pushes, so the order the crates come down matters.",
+  "schema_version": 1
+}

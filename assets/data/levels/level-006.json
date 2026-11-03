@@ -1,0 +1,23 @@
+{
+  "id": "level-006",
+  "name": "Narrow Lane",
+  "name_key": "level_006_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 3,
+  "par_moves": 37,
+  "par_pushes": 15,
+  "columns": 10,
+  "rows": 8,
+  "tiles": [
+    "##########",
+    "#____#__.#",
+    "#____#___#",
+    "#____#__.#",
+    "#__$_____#",
+    "#__$_#___#",
+    "#__@_#___#",
+    "##########"
+  ],
+  "notes": "Single-file lane through the wall. Push the upper crate down the lane first, then lift the lower crate into it and follow.",
+  "schema_version": 1
+}

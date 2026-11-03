@@ -1,0 +1,23 @@
+{
+  "id": "level-019",
+  "name": "The Labyrinth",
+  "name_key": "level_019_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 9,
+  "par_moves": 49,
+  "par_pushes": 18,
+  "columns": 10,
+  "rows": 8,
+  "tiles": [
+    "##########",
+    "#________#",
+    "#_#$$#$#$#",
+    "#_#__#_#_#",
+    "#@_______#",
+    "#_#__#_#_#",
+    "#.__._._.#",
+    "##########"
+  ],
+  "notes": "A multi-room maze: each crate has one route and the rooms share the same narrow passages.",
+  "schema_version": 1
+}

@@ -1,0 +1,23 @@
+{
+  "id": "level-015",
+  "name": "Crossroads",
+  "name_key": "level_015_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 7,
+  "par_moves": 42,
+  "par_pushes": 16,
+  "columns": 10,
+  "rows": 8,
+  "tiles": [
+    "##########",
+    "#________#",
+    "#_$_$_$_$#",
+    "#________#",
+    "#@_#_#_#_#",
+    "#________#",
+    "#_._._._.#",
+    "##########"
+  ],
+  "notes": "Four crates come down one row while the pillars split the walk; the routes cross on the way to the plates.",
+  "schema_version": 1
+}

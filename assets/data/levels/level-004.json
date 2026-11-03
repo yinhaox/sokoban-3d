@@ -1,0 +1,23 @@
+{
+  "id": "level-004",
+  "name": "Mind the Corner",
+  "name_key": "level_004_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 2,
+  "par_moves": 27,
+  "par_pushes": 10,
+  "columns": 9,
+  "rows": 8,
+  "tiles": [
+    "#########",
+    "#_____._#",
+    "#_$_____#",
+    "#_____@_#",
+    "#____#__#",
+    "#_$_____#",
+    "#_____._#",
+    "#########"
+  ],
+  "notes": "Pushing a crate into the wall corner deadlocks it and raises the warning chip; undo the push. Finish each crate on the plate it can still reach.",
+  "schema_version": 1
+}

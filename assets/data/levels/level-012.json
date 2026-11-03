@@ -1,0 +1,23 @@
+{
+  "id": "level-012",
+  "name": "Split Rooms",
+  "name_key": "level_012_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 5,
+  "par_moves": 57,
+  "par_pushes": 24,
+  "columns": 10,
+  "rows": 8,
+  "tiles": [
+    "##########",
+    "#@___#___#",
+    "#_$__#__.#",
+    "#____#___#",
+    "#_$_____.#",
+    "#_$__#__.#",
+    "#____#___#",
+    "##########"
+  ],
+  "notes": "Two rooms share one door. All three crates cross left to right, and the order they line up at the door decides the finish.",
+  "schema_version": 1
+}

@@ -1,0 +1,5 @@
+[capture] target: C:\Users\yinha\.dsh\state\superagent-sokoban\work\levels-010-020-3b173eb7abd7\production\qa\evidence\level-content-20\level-020.png
+[capture] user arguments: --screen=gameplay --level=level-020
+[capture] waiting up to 60s for the PNG
+$ D:/SteamLibrary/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe --path . -- --studio-capture=C:\Users\yinha\.dsh\state\superagent-sokoban\work\levels-010-020-3b173eb7abd7\production\qa\evidence\level-content-20\level-020.png --screen=gameplay --level=level-020
+[capture] OK: C:\Users\yinha\.dsh\state\superagent-sokoban\work\levels-010-020-3b173eb7abd7\production\qa\evidence\level-content-20\level-020.png (64499 bytes)

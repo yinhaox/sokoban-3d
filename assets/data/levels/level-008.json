@@ -1,0 +1,23 @@
+{
+  "id": "level-008",
+  "name": "Off the Plate",
+  "name_key": "level_008_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 4,
+  "par_moves": 21,
+  "par_pushes": 7,
+  "columns": 10,
+  "rows": 8,
+  "tiles": [
+    "##########",
+    "#__#_____#",
+    "#_*____._#",
+    "#__#_____#",
+    "#_$#_____#",
+    "#__#_____#",
+    "#_@#_____#",
+    "##########"
+  ],
+  "notes": "The upper crate starts on a plate and must be pushed off it; the free crate takes that plate while the first one walks around to the other.",
+  "schema_version": 1
+}

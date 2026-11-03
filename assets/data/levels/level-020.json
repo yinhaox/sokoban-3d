@@ -1,0 +1,23 @@
+{
+  "id": "level-020",
+  "name": "Final Exam",
+  "name_key": "level_020_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 10,
+  "par_moves": 58,
+  "par_pushes": 25,
+  "columns": 10,
+  "rows": 8,
+  "tiles": [
+    "##########",
+    "#@_______#",
+    "#_$_$_$_$#",
+    "#__#___#_#",
+    "##_##_##_#",
+    "#________#",
+    "#._.___..#",
+    "##########"
+  ],
+  "notes": "The last room combines the gate, the parked crate and the crossing routes; solve it in the order the room allows.",
+  "schema_version": 1
+}
