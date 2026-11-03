@@ -1,0 +1,6 @@
+[capture] removed stale file: C:\Users\yinha\.dsh\state\superagent-sokoban\work\audio-cues-2d934f06d8de\production\qa\evidence\audio-cues\audio-cues-settings.png
+[capture] target: C:\Users\yinha\.dsh\state\superagent-sokoban\work\audio-cues-2d934f06d8de\production\qa\evidence\audio-cues\audio-cues-settings.png
+[capture] user arguments: --screen=settings --sfx-volume=0.5 --save=user://evidence-save-audio.json --fresh-save
+[capture] waiting up to 60s for the PNG
+$ D:/SteamLibrary/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe --path . -- --studio-capture=C:\Users\yinha\.dsh\state\superagent-sokoban\work\audio-cues-2d934f06d8de\production\qa\evidence\audio-cues\audio-cues-settings.png --screen=settings --sfx-volume=0.5 --save=user://evidence-save-audio.json --fresh-save
+[capture] OK: C:\Users\yinha\.dsh\state\superagent-sokoban\work\audio-cues-2d934f06d8de\production\qa\evidence\audio-cues\audio-cues-settings.png (41657 bytes)

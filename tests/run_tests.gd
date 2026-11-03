@@ -37,6 +37,7 @@ const SaveStoreClass = preload("res://src/logic/save_store.gd")
 const SettingsModelClass = preload("res://src/logic/settings_model.gd")
 const LocalizationClass = preload("res://src/logic/localization.gd")
 const SettingsScreenClass = preload("res://src/ui/settings_screen.gd")
+const AudioDirectorClass = preload("res://src/audio/audio_director.gd")
 
 const VICTORY_SCENE_PATH := "res://scenes/ui/victory_panel.tscn"
 const HUD_SCENE_PATH := "res://scenes/ui/hud.tscn"
@@ -225,6 +226,7 @@ func _init() -> void:
 	_test_star_row()
 	_test_gameplay_pause_blocks_input()
 	_test_save_settings_i18n()
+	_test_audio_cues()
 
 	if _failed == 0:
 		print("PASS: %d checks passed" % _passed)
@@ -2313,3 +2315,209 @@ func _read_test_text(path: String) -> String:
 	var text := file.get_as_text()
 	file.close()
 	return text
+
+
+func _test_audio_cues() -> void:
+	_test_audio_cue_table()
+	_test_audio_synthesis()
+	_test_audio_throttle()
+	_test_audio_volumes()
+	_test_audio_event_wiring()
+	_test_audio_button_hook()
+
+
+## The acceptance table: exactly seven cues, each parameter inside its range.
+func _test_audio_cue_table() -> void:
+	_check(AudioDirectorClass.CUES.size() == 7, "the audio director configures seven cues")
+	var required: Array[String] = [
+		AudioDirectorClass.CUE_STEP,
+		AudioDirectorClass.CUE_PUSH,
+		AudioDirectorClass.CUE_LAND,
+		AudioDirectorClass.CUE_UNDO,
+		AudioDirectorClass.CUE_RESTART,
+		AudioDirectorClass.CUE_WIN,
+		AudioDirectorClass.CUE_UI_CLICK,
+	]
+	for cue: String in required:
+		_check(AudioDirectorClass.CUES.has(cue), "the audio director configures the %s cue" % cue)
+	for cue: String in AudioDirectorClass.CUES:
+		_check(
+			_cue_parameters_in_range(AudioDirectorClass.CUES[cue] as Dictionary),
+			"the %s cue has duration, waveform, frequency and envelope in range" % cue
+		)
+	var win := AudioDirectorClass.CUES[AudioDirectorClass.CUE_WIN] as Dictionary
+	_check(
+		float(win.get("second_frequency_hz", 0.0)) > float(win.get("frequency_hz", 0.0)),
+		"the win cue is a rising two-note pair"
+	)
+	var step := AudioDirectorClass.CUES[AudioDirectorClass.CUE_STEP] as Dictionary
+	_check(not step.has("second_frequency_hz"), "the step cue is a single note")
+
+
+func _cue_parameters_in_range(definition: Dictionary) -> bool:
+	var duration := float(definition.get("duration_ms", 0.0))
+	var frequency := float(definition.get("frequency_hz", 0.0))
+	var attack := float(definition.get("attack_ms", -1.0))
+	var release := float(definition.get("release_ms", -1.0))
+	var decay := float(definition.get("decay", -1.0))
+	var interval := int(definition.get("min_interval_ms", -1))
+	return (
+		duration >= AudioDirectorClass.MIN_CUE_DURATION_MS
+		and duration <= AudioDirectorClass.MAX_CUE_DURATION_MS
+		and AudioDirectorClass.WAVEFORMS.has(str(definition.get("waveform", "")))
+		and frequency >= AudioDirectorClass.MIN_FREQUENCY_HZ
+		and frequency <= AudioDirectorClass.MAX_FREQUENCY_HZ
+		and attack >= 0.0
+		and attack < duration
+		and release >= 0.0
+		and release <= duration
+		and decay >= 0.0
+		and interval >= 0
+		and interval <= AudioDirectorClass.MAX_MIN_INTERVAL_MS
+	)
+
+
+## Every cue builds its full duration and is normalized below full scale.
+func _test_audio_synthesis() -> void:
+	for cue: String in AudioDirectorClass.CUES:
+		var definition := AudioDirectorClass.CUES[cue] as Dictionary
+		var frames := AudioDirectorClass.build_frames(cue)
+		var expected := AudioDirectorClass.duration_frames(definition)
+		_check(frames.size() == expected, "the %s cue builds its full duration" % cue)
+		var peak := 0.0
+		for frame: Vector2 in frames:
+			peak = maxf(peak, absf(frame.x))
+		_check(peak > 0.1 and peak <= 0.501, "the %s cue is audible and peak-normalized" % cue)
+
+
+## The minimum interval drops a fast repeat of the same cue only.
+func _test_audio_throttle() -> void:
+	var director := AudioDirectorClass.new()
+	var triggered: Array[String] = []
+	director.cue_triggered.connect(func(cue: String) -> void: triggered.append(cue))
+	_check(director.play_cue(AudioDirectorClass.CUE_STEP, 1000), "the first step cue is accepted")
+	_check(
+		not director.play_cue(AudioDirectorClass.CUE_STEP, 1030),
+		"a step repeat inside the minimum interval is dropped"
+	)
+	_check(
+		director.play_cue(AudioDirectorClass.CUE_STEP, 1060),
+		"a step repeat at the minimum interval is accepted again"
+	)
+	_check(
+		director.play_cue(AudioDirectorClass.CUE_PUSH, 1005),
+		"a different cue is not throttled by the step cue"
+	)
+	_check(
+		not director.play_cue(AudioDirectorClass.CUE_PUSH, 1080),
+		"a push repeat inside its own interval is dropped"
+	)
+	_check(
+		director.play_cue(AudioDirectorClass.CUE_PUSH, 1085),
+		"a push repeat at its own interval is accepted again"
+	)
+	_check(triggered.count(AudioDirectorClass.CUE_STEP) == 2, "the throttle counts accepted step cues only")
+	_check(not director.play_cue("mystery", 2000), "an unknown cue is refused instead of crashing")
+	_check(
+		director.play_cue(AudioDirectorClass.CUE_UI_CLICK, 2001),
+		"a known cue still triggers after an unknown one"
+	)
+	director.free()
+
+
+## 0..1 maps to the bus dB value; 0 mutes the bus but playback still triggers.
+func _test_audio_volumes() -> void:
+	_check(is_equal_approx(SettingsModelClass.volume_to_db(1.0), 0.0), "full volume maps to 0 dB")
+	_check(
+		is_equal_approx(SettingsModelClass.volume_to_db(0.5), linear_to_db(0.5)),
+		"half volume maps to linear_to_db(0.5)"
+	)
+	_check(
+		is_equal_approx(SettingsModelClass.volume_to_db(0.0), -80.0),
+		"zero volume maps to the -80 dB silent floor"
+	)
+	var director := AudioDirectorClass.new()
+	director.apply_volumes(0.8, 0.9)
+	var master := AudioServer.get_bus_index(AudioDirectorClass.MASTER_BUS)
+	var sfx := AudioServer.get_bus_index(AudioDirectorClass.SFX_BUS)
+	_check(sfx >= 0, "the SFX bus exists after apply_volumes")
+	_check(
+		is_equal_approx(AudioServer.get_bus_volume_db(master), SettingsModelClass.volume_to_db(0.8)),
+		"master 0.8 reaches the Master bus in dB"
+	)
+	_check(
+		is_equal_approx(AudioServer.get_bus_volume_db(sfx), SettingsModelClass.volume_to_db(0.9)),
+		"SFX 0.9 reaches the SFX bus in dB"
+	)
+	_check(not AudioServer.is_bus_mute(sfx), "a non-zero SFX volume leaves the bus unmuted")
+	director.apply_volumes(0.8, 0.0)
+	_check(AudioServer.is_bus_mute(sfx), "SFX volume 0 mutes the SFX bus")
+	_check(
+		is_equal_approx(AudioServer.get_bus_volume_db(sfx), SettingsModelClass.volume_to_db(0.0)),
+		"muted SFX still carries the silent dB floor"
+	)
+	_check(
+		director.play_cue(AudioDirectorClass.CUE_STEP, 5000),
+		"a muted cue still triggers and plays silently"
+	)
+	director.apply_volumes(0.8, 0.9)
+	director.free()
+
+
+## The gameplay events request their cue through the normal controller paths.
+func _test_audio_event_wiring() -> void:
+	var pair := _make_controller(_make_level(BASIC_TILES))
+	var controller: GameplayControllerClass = pair[0]
+	var played: Array[String] = []
+	controller.cue_requested.connect(func(cue: String) -> void: played.append(cue))
+	controller.request_move(GameSessionClass.Direction.RIGHT)
+	_check(played.has(AudioDirectorClass.CUE_STEP), "an accepted step requests the step cue")
+	controller.request_move(GameSessionClass.Direction.RIGHT)
+	_check(played.has(AudioDirectorClass.CUE_PUSH), "an accepted push requests the push cue")
+	_walk_controller(
+		controller,
+		[
+			GameSessionClass.Direction.DOWN,
+			GameSessionClass.Direction.RIGHT,
+			GameSessionClass.Direction.UP,
+			GameSessionClass.Direction.UP,
+		]
+	)
+	_check(played.has(AudioDirectorClass.CUE_LAND), "a crate pushed onto a goal requests the land cue")
+	_check(played.has(AudioDirectorClass.CUE_WIN), "completing the level requests the win cue")
+	_check(
+		played.count(AudioDirectorClass.CUE_WIN) == 1,
+		"the win cue is requested exactly once"
+	)
+	controller.free()
+	pair[1].free()
+
+	var undo_pair := _make_controller(_make_level(BASIC_TILES))
+	var undo_controller: GameplayControllerClass = undo_pair[0]
+	var undo_played: Array[String] = []
+	undo_controller.cue_requested.connect(func(cue: String) -> void: undo_played.append(cue))
+	undo_controller.request_move(GameSessionClass.Direction.RIGHT)
+	undo_controller.undo()
+	_check(undo_played.has(AudioDirectorClass.CUE_UNDO), "an accepted undo requests the undo cue")
+	undo_controller.restart_level()
+	_check(undo_played.has(AudioDirectorClass.CUE_RESTART), "restart requests the restart cue")
+	undo_controller.free()
+	undo_pair[1].free()
+
+
+## A button added at runtime is wired to the click cue and fires it once.
+func _test_audio_button_hook() -> void:
+	var director := AudioDirectorClass.new()
+	var played: Array[String] = []
+	director.cue_triggered.connect(func(cue: String) -> void: played.append(cue))
+	var button := Button.new()
+	director._on_node_added(button)
+	button.pressed.emit()
+	_check(played.has(AudioDirectorClass.CUE_UI_CLICK), "a button press requests the click cue")
+	_check(
+		played.count(AudioDirectorClass.CUE_UI_CLICK) == 1,
+		"one press requests the click cue exactly once"
+	)
+	director.free()
+	button.free()
+

@@ -9,12 +9,14 @@ extends Node3D
 ## the gameplay controller and back, persists progress and settings through
 ## `SaveStore`, and shows the confirm modal before a destructive action runs.
 ##
-## The capture aids below only apply to a capture run and change no gameplay
-## path: `--screen=`, `--level=`, `--script=`, `--capture-instant`,
-## `--window=WxH`, `--save=`, `--fresh-save`, `--language=` and `--colorblind=`,
-## so `capture_command` can screenshot each state and each locale.
+## The capture aids below only apply to a capture or diagnostic run and change no
+## gameplay path: `--screen=`, `--level=`, `--script=`, `--capture-instant`,
+## `--window=WxH`, `--save=`, `--fresh-save`, `--language=`, `--colorblind=`,
+## `--sfx-volume=`, `--audio-log` and `--quit-after=`, so `capture_command` can
+## screenshot each state and a timed run can log cue order.
 
 const LevelDataScript = preload("res://src/logic/level_data.gd")
+const AudioDirectorScript = preload("res://src/audio/audio_director.gd")
 const BoardBuilderScript = preload("res://src/game/board_builder.gd")
 const CameraRigScript = preload("res://src/game/camera_rig.gd")
 const GameplayControllerScript = preload("res://src/game/gameplay_controller.gd")
@@ -44,6 +46,9 @@ const CAPTURE_SAVE_ARG := "--save="
 const CAPTURE_FRESH_SAVE_ARG := "--fresh-save"
 const CAPTURE_LANGUAGE_ARG := "--language="
 const CAPTURE_COLORBLIND_ARG := "--colorblind="
+const CAPTURE_SFX_VOLUME_ARG := "--sfx-volume="
+const CAPTURE_AUDIO_LOG_ARG := "--audio-log"
+const CAPTURE_QUIT_AFTER_ARG := "--quit-after="
 const WINDOW_SIZE_SEPARATOR := "x"
 
 const SCREEN_MAIN_MENU := "menu"
@@ -78,6 +83,7 @@ enum ConfirmAction { NONE, RESTART, MAIN_MENU }
 
 var router: ScreenRouterScript
 var save_store: SaveStoreScript
+var audio: AudioDirectorScript
 
 var _level_paths: Array[String] = []
 var _level_index: int = 0
@@ -99,6 +105,7 @@ func _ready() -> void:
 	_level_paths = LevelSequenceScript.level_paths()
 	_wire_signals()
 	_setup_save_store()
+	_setup_audio()
 	_apply_capture_settings()
 	_apply_settings()
 	if get_tree() != null:
@@ -109,6 +116,7 @@ func _ready() -> void:
 	_apply_window_argument()
 	_apply_screen(router.screen)
 	_apply_capture_screen(capture_argument(CAPTURE_SCREEN_ARG))
+	_apply_quit_after()
 
 
 ## Which screen the player is on, as `ScreenRouter.Screen`.
@@ -177,6 +185,17 @@ func _setup_save_store() -> void:
 			_completed[level_id] = true
 
 
+## The audio director is held by the boot scene instead of an autoload, because
+## `project.godot` is outside a story worker's write boundary. It owns the SFX bus
+## and the seven synthesized voices; the gameplay controller only emits cues.
+func _setup_audio() -> void:
+	audio = AudioDirectorScript.new()
+	audio.name = "AudioDirector"
+	add_child(audio)
+	audio.set_logging(has_capture_argument(CAPTURE_AUDIO_LOG_ARG))
+	_gameplay.cue_requested.connect(audio.play_cue)
+
+
 func _level_ids() -> Array[String]:
 	var ids: Array[String] = []
 	for path: String in _level_paths:
@@ -214,22 +233,10 @@ func _apply_settings() -> void:
 
 
 func _apply_audio(settings: Dictionary) -> void:
-	var master := AudioServer.get_bus_index("Master")
-	_apply_bus_volume(master, float(settings.get(SettingsModelScript.MASTER_VOLUME, 0.8)))
-	var sfx := AudioServer.get_bus_index("SFX")
-	if sfx < 0:
-		AudioServer.add_bus()
-		sfx = AudioServer.bus_count - 1
-		AudioServer.set_bus_name(sfx, "SFX")
-		AudioServer.set_bus_send(sfx, "Master")
-	_apply_bus_volume(sfx, float(settings.get(SettingsModelScript.SFX_VOLUME, 0.9)))
-
-
-func _apply_bus_volume(bus: int, linear: float) -> void:
-	if bus < 0:
-		return
-	AudioServer.set_bus_mute(bus, linear <= 0.0)
-	AudioServer.set_bus_volume_db(bus, SettingsModelScript.volume_to_db(linear))
+	audio.apply_volumes(
+		float(settings.get(SettingsModelScript.MASTER_VOLUME, 0.8)),
+		float(settings.get(SettingsModelScript.SFX_VOLUME, 0.9))
+	)
 
 
 func _apply_fullscreen(settings: Dictionary) -> void:
@@ -250,6 +257,27 @@ func _apply_capture_settings() -> void:
 	var colorblind := capture_argument(CAPTURE_COLORBLIND_ARG)
 	if SettingsModelScript.COLORBLIND_MODES.has(colorblind):
 		save_store.set_setting(SettingsModelScript.COLORBLIND_MODE, colorblind)
+	var sfx := capture_argument(CAPTURE_SFX_VOLUME_ARG)
+	if not sfx.is_empty() and sfx.is_valid_float():
+		save_store.set_setting(SettingsModelScript.SFX_VOLUME, sfx.to_float())
+
+
+## Diagnostic aid: ends a timed run so `run_command` returns control to the
+## evidence log instead of waiting for a person to close the window.
+func _apply_quit_after() -> void:
+	var raw := capture_argument(CAPTURE_QUIT_AFTER_ARG)
+	if raw.is_empty():
+		return
+	if not raw.is_valid_float():
+		push_warning("main: --quit-after=%s is not a number of seconds" % raw)
+		return
+	var timer: SceneTreeTimer = get_tree().create_timer(maxf(raw.to_float(), 0.1))
+	timer.timeout.connect(_quit_timed_run)
+
+
+func _quit_timed_run() -> void:
+	if get_tree() != null:
+		get_tree().quit()
 
 
 func _refresh_texts() -> void:
