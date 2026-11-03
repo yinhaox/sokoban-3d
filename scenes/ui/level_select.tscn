@@ -1,0 +1,61 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/ui/level_select.gd" id="1_select"]
+
+[node name="LevelSelect" type="CanvasLayer"]
+layer = 20
+script = ExtResource("1_select")
+
+[node name="Root" type="Control" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Background" type="PanelContainer" parent="Root"]
+theme_type_variation = &"ScreenBackground"
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Content" type="Control" parent="Root"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Margin" type="MarginContainer" parent="Root/Content"]
+theme_type_variation = &"ScreenMargin"
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Layout" type="VBoxContainer" parent="Root/Content/Margin"]
+alignment = 1
+
+[node name="Title" type="Label" parent="Root/Content/Margin/Layout"]
+theme_type_variation = &"HeadingLabel"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="Root/Content/Margin/Layout"]
+custom_minimum_size = Vector2(0, 16)
+
+[node name="Grid" type="GridContainer" parent="Root/Content/Margin/Layout"]
+columns = 4
+size_flags_horizontal = 4
+
+[node name="Spacer2" type="Control" parent="Root/Content/Margin/Layout"]
+custom_minimum_size = Vector2(0, 16)
+
+[node name="Back" type="Button" parent="Root/Content/Margin/Layout"]
+custom_minimum_size = Vector2(200, 44)
+size_flags_horizontal = 4
