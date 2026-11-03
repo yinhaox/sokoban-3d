@@ -1,0 +1,22 @@
+# Capture the other three quarter turns of the same build.
+$env:STUDIO_CAPTURE_QUARTER_TURNS=1; python scripts/studio.py capture --out production/qa/evidence/camera-framing/view-135.png
+[capture] removed stale file: .\production\qa\evidence\camera-framing\view-135.png
+[capture] target: .\production\qa\evidence\camera-framing\view-135.png
+[capture] waiting up to 60s for the PNG
+$ godot --path . -- --studio-capture=.\production\qa\evidence\camera-framing\view-135.png
+[capture] OK: .\production\qa\evidence\camera-framing\view-135.png (29728 bytes)
+exit code: 0
+$env:STUDIO_CAPTURE_QUARTER_TURNS=2; python scripts/studio.py capture --out production/qa/evidence/camera-framing/view-225.png
+[capture] removed stale file: .\production\qa\evidence\camera-framing\view-225.png
+[capture] target: .\production\qa\evidence\camera-framing\view-225.png
+[capture] waiting up to 60s for the PNG
+$ godot --path . -- --studio-capture=.\production\qa\evidence\camera-framing\view-225.png
+[capture] OK: .\production\qa\evidence\camera-framing\view-225.png (35518 bytes)
+exit code: 0
+$env:STUDIO_CAPTURE_QUARTER_TURNS=3; python scripts/studio.py capture --out production/qa/evidence/camera-framing/view-315.png
+[capture] removed stale file: .\production\qa\evidence\camera-framing\view-315.png
+[capture] target: .\production\qa\evidence\camera-framing\view-315.png
+[capture] waiting up to 60s for the PNG
+$ godot --path . -- --studio-capture=.\production\qa\evidence\camera-framing\view-315.png
+[capture] OK: .\production\qa\evidence\camera-framing\view-315.png (33970 bytes)
+exit code: 0

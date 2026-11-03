@@ -152,6 +152,8 @@ func _init() -> void:
 	_test_level_files()
 	_test_board_builder()
 	_test_camera_rig()
+	_test_camera_framing()
+	_test_wall_fade_outline()
 
 	if _failed == 0:
 		print("PASS: %d checks passed" % _passed)
@@ -776,6 +778,106 @@ func _test_camera_rig() -> void:
 		CameraRigClass.occluded_wall_cells(camera_ground, no_targets, wall_cells, 1.0, 7, 7).is_empty(),
 		"no targets means no faded walls"
 	)
+
+
+func _test_camera_framing() -> void:
+	var aspect := 1152.0 / 648.0
+	var camera_distance := 20.0
+	var base_camera := Vector3(
+		0.0, sin(deg_to_rad(40.0)) * camera_distance, cos(deg_to_rad(40.0)) * camera_distance
+	)
+	var sizes := [[7, 7], [9, 7], [15, 15]]
+	for yaw in [45.0, 135.0, 225.0, 315.0]:
+		for room in sizes:
+			var label := "%dx%d room at yaw %d" % [room[0], room[1], int(yaw)]
+			var corners := _room_corners(room[0], room[1], 1.0)
+			var framing := CameraRigClass.frame_room(
+				corners, yaw, 40.0, aspect, 0.8, 6.0, 18.0, base_camera
+			)
+			var size: float = framing["size"]
+			var camera_local: Vector3 = framing["camera_local"]
+			var min_view := Vector2(INF, INF)
+			var max_view := Vector2(-INF, -INF)
+			var every_corner_in_front := true
+			for corner in corners:
+				var view := CameraRigClass.view_point(corner, camera_local, yaw, 40.0)
+				min_view = Vector2(minf(min_view.x, view.x), minf(min_view.y, view.y))
+				max_view = Vector2(maxf(max_view.x, view.x), maxf(max_view.y, view.y))
+				if CameraRigClass.view_depth(corner, camera_local, yaw, 40.0) <= 0.0:
+					every_corner_in_front = false
+			var horizontal := max_view.x - min_view.x
+			var vertical := max_view.y - min_view.y
+			var centre := (min_view + max_view) * 0.5
+			_check(centre.length() < 0.01, "%s: the projected room is centred in the view" % label)
+			_check(
+				vertical <= size + 0.001,
+				"%s: the whole room height fits the orthographic size" % label
+			)
+			_check(
+				horizontal <= size * aspect + 0.001,
+				"%s: the whole room width fits the orthographic size" % label
+			)
+			_check(every_corner_in_front, "%s: every room corner is in front of the camera" % label)
+			_check(
+				maxf(vertical, horizontal / aspect) >= size * 0.8 - 0.002,
+				"%s: the room fills its fill ratio of the view" % label
+			)
+
+	# A non-square room must not be framed with a square room's size.
+	var wide: float = CameraRigClass.frame_room(
+		_room_corners(9, 7, 1.0), 45.0, 40.0, aspect, 0.8, 6.0, 18.0, base_camera
+	)["size"]
+	var square: float = CameraRigClass.frame_room(
+		_room_corners(7, 7, 1.0), 45.0, 40.0, aspect, 0.8, 6.0, 18.0, base_camera
+	)["size"]
+	_check(wide > square, "a 9x7 room is framed larger than a 7x7 room")
+
+
+func _room_corners(columns: int, rows: int, wall_height: float) -> Array[Vector3]:
+	var half_width := float(columns) * BoardBuilderClass.CELL_SIZE * 0.5
+	var half_depth := float(rows) * BoardBuilderClass.CELL_SIZE * 0.5
+	var corners: Array[Vector3] = []
+	for x in [-half_width, half_width]:
+		for y in [0.0, wall_height]:
+			for z in [-half_depth, half_depth]:
+				corners.append(Vector3(x, y, z))
+	return corners
+
+
+func _test_wall_fade_outline() -> void:
+	var faded_side := BoardBuilderClass.fade_side_alpha(0.22)
+	var faded_cap := BoardBuilderClass.fade_cap_alpha(0.22)
+	_check(faded_side > 0.0, "a faded wall keeps some alpha instead of vanishing")
+	_check(faded_side < 0.5, "a faded wall stays semi-transparent")
+	_check(faded_cap > faded_side, "a faded wall's top cap stays more opaque than its sides")
+	_check(
+		faded_cap >= 0.3 and faded_cap < 1.0,
+		"a faded border wall keeps a visible outline in its top cap"
+	)
+	_check(BoardBuilderClass.fade_cap_alpha(1.0) == 1.0, "an opaque wall keeps an opaque cap")
+	_check(BoardBuilderClass.fade_cap_alpha(0.0) > 0.0, "even a full fade keeps the wall outline")
+
+	var level := _make_level(BASIC_TILES)
+	var board := BoardBuilderClass.new()
+	board.build(level)
+	var bounds := board.room_bounds()
+	_check(
+		is_equal_approx(bounds.position.x, -3.5) and is_equal_approx(bounds.position.z, -3.5),
+		"the room bounds start at the outer face of the border walls"
+	)
+	_check(
+		is_equal_approx(bounds.size.x, 7.0) and is_equal_approx(bounds.size.z, 7.0),
+		"the room bounds cover the whole 7x7 footprint"
+	)
+	_check(
+		is_equal_approx(bounds.position.y, -board.floor_thickness),
+		"the room bounds include the floor slab"
+	)
+	_check(
+		is_equal_approx(bounds.end.y, board.wall_height + BoardBuilderClass.CAP_HEIGHT),
+		"the room bounds reach the top of the wall cap"
+	)
+	board.free()
 
 
 func _level_dictionary(tiles: Array, overrides: Dictionary = {}) -> Dictionary:

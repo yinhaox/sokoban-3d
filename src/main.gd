@@ -12,6 +12,11 @@ const CameraRigScript = preload("res://src/game/camera_rig.gd")
 
 const DEFAULT_LEVEL_PATH := "res://assets/data/levels/level-001.json"
 
+## Optional capture aid: an integer 1..3 in this environment variable boots the
+## room at that quarter turn, so `capture_command` can screenshot every snap
+## state. Unset, the room boots at the default yaw.
+const CAPTURE_QUARTER_TURNS_ENV := "STUDIO_CAPTURE_QUARTER_TURNS"
+
 @export_file("*.json") var level_path: String = DEFAULT_LEVEL_PATH
 
 @onready var _board: BoardBuilderScript = $Board as BoardBuilderScript
@@ -24,6 +29,17 @@ func _ready() -> void:
 		return
 	_board.build(level)
 	_camera_rig.setup(level, _board)
+	var turns := capture_quarter_turns()
+	if turns != 0:
+		_camera_rig.set_quarter_turns(turns)
+
+
+## Quarter turn requested by the capture aid, or 0 when it is unset.
+static func capture_quarter_turns() -> int:
+	var raw := OS.get_environment(CAPTURE_QUARTER_TURNS_ENV).strip_edges()
+	if not raw.is_valid_int():
+		return 0
+	return posmod(raw.to_int(), 4)
 
 
 ## Reads and validates one level file. Returns null and logs the reason when the
