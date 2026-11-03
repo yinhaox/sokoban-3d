@@ -1,0 +1,23 @@
+{
+  "id": "level-007",
+  "name": "Set It Aside",
+  "name_key": "level_007_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 3,
+  "par_moves": 37,
+  "par_pushes": 14,
+  "columns": 10,
+  "rows": 8,
+  "tiles": [
+    "##########",
+    "#____#___#",
+    "#____#_._#",
+    "#_$______#",
+    "#_$__#___#",
+    "#___@#_._#",
+    "#________#",
+    "##########"
+  ],
+  "notes": "Park the first crate in the side pocket so the second can pass, then bring the parked crate back to its plate.",
+  "schema_version": 1
+}

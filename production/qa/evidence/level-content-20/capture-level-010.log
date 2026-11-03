@@ -1,0 +1,6 @@
+[capture] removed stale file: .\production\qa\evidence\level-content-20\level-010.png
+[capture] target: .\production\qa\evidence\level-content-20\level-010.png
+[capture] user arguments: --screen=gameplay --level=level-010
+[capture] waiting up to 60s for the PNG
+$ godot --path . -- --studio-capture=.\production\qa\evidence\level-content-20\level-010.png --screen=gameplay --level=level-010
+[capture] OK: .\production\qa\evidence\level-content-20\level-010.png (57719 bytes)

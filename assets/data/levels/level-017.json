@@ -1,0 +1,23 @@
+{
+  "id": "level-017",
+  "name": "Chain Reaction",
+  "name_key": "level_017_name",
+  "author": "Sokoban 3D Studio",
+  "difficulty": 8,
+  "par_moves": 40,
+  "par_pushes": 11,
+  "columns": 10,
+  "rows": 8,
+  "tiles": [
+    "##########",
+    "#.__.____#",
+    "#______$$#",
+    "#$###_##_#",
+    "#_###_##_#",
+    "#____@___#",
+    "#___$.__.#",
+    "##########"
+  ],
+  "notes": "Each crate must finish before the next can move; the middle corridor only opens after the first two are placed.",
+  "schema_version": 1
+}
