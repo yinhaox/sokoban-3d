@@ -37,7 +37,7 @@ There is no music in 1.0 by design: a puzzle is easier to think in without a loo
 - Events wired once: `step` accepted non-push move, `push` accepted push, `land` crate settles on a goal plate (same frame as `push`, both play), `undo` accepted undo, `restart` level restart, `win` level completed (after `win_delay_seconds` 0.4 s, or immediately under reduced motion), `ui_click` any `Button.pressed`. The director wires buttons already in the tree and follows `node_added`, so runtime-built level cards click too.
 - No other audio plays in 1.0: a rejected move, the deadlock warning, victory stars, unlock and focus movement are silent. Every button press gets the same `ui_click`, including Back. Ambient loop, music and voice are out of scope, and every cue is non-positional.
 - Sounds never change timing: no gameplay code waits on audio. Playback is fire-and-forget.
-- **Replacement path.** A future story replaces the cue table or the whole director; gameplay only emits `cue_requested(cue)` with the seven cue ids, so recorded files or another synthesizer can replace playback without touching gameplay code. Keep the seven cue names and only the director and its assets change; renaming them also touches `src/game/gameplay_controller.gd` and the tests.
+- **Replacement path.** A future story replaces the cue table or the whole director; gameplay only emits `cue_requested(cue)` and never calls a player directly, so recorded files or another synthesizer can replace playback without touching gameplay code. Keep the seven cue names and only the director and its assets change; renaming them also touches `src/game/gameplay_controller.gd` and the tests.
 
 **Mixing and volume.**
 
@@ -84,7 +84,7 @@ _Cue values are the constants in `src/audio/audio_director.gd` that the tests en
 
 ## Edge cases
 
-- **The player pushes a crate onto the last goal.** `push` and `land` start in the same frame on separate voices, and `win` waits for `win_delay_seconds` 0.4 s, so it never overlaps the 140 ms `land` cue.
+- **The player pushes a crate onto the last goal.** `push` and `land` start in the same frame on separate voices; with motion on, `win` waits for `win_delay_seconds` 0.4 s, so it clears the 140 ms `land` cue. Under reduced motion the win cue starts immediately and overlaps `land`; both are short and peak-normalized, so neither cuts the other.
 - **Undo is spammed.** The 80 ms interval drops repeats inside the window, so the player hears one rewind per window instead of a stutter.
 - **A direction is held down a corridor.** Each accepted move requests `step`; the 60 ms interval suppresses commits closer than that, so the rhythm follows the move animation rather than stacking.
 - **SFX is set to 0.** The bus is muted, every cue still triggers and plays silently, and no click or pop is heard because gain is applied at the bus.
