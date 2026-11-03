@@ -1,0 +1,4 @@
+[capture] target: C:\Users\yinha\.dsh\state\superagent-sokoban\work\iso-room-camera-98ba09ee1820\production\qa\evidence\level-view-3d\level-view-3d-1.png
+[capture] waiting up to 60s for the PNG
+$ D:/SteamLibrary/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe --path . -- --studio-capture=C:\Users\yinha\.dsh\state\superagent-sokoban\work\iso-room-camera-98ba09ee1820\production\qa\evidence\level-view-3d\level-view-3d-1.png
+[capture] OK: C:\Users\yinha\.dsh\state\superagent-sokoban\work\iso-room-camera-98ba09ee1820\production\qa\evidence\level-view-3d\level-view-3d-1.png (38062 bytes)
