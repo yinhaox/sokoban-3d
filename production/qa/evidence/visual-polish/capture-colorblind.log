@@ -1,6 +1,6 @@
-[capture] removed stale file: .\production\qa\evidence\visual-polish\level-010-colorblind.png
-[capture] target: .\production\qa\evidence\visual-polish\level-010-colorblind.png
+[capture] removed stale file: <home>\.dsh\state\superagent-sokoban\work\visual-polish-67256e2db6fc\production\qa\evidence\visual-polish\level-010-colorblind.png
+[capture] target: <home>\.dsh\state\superagent-sokoban\work\visual-polish-67256e2db6fc\production\qa\evidence\visual-polish\level-010-colorblind.png
 [capture] user arguments: --level=level-010 --colorblind=1
 [capture] waiting up to 60s for the PNG
-$ godot --path . -- --studio-capture=.\production\qa\evidence\visual-polish\level-010-colorblind.png --level=level-010 --colorblind=1
-[capture] OK: .\production\qa\evidence\visual-polish\level-010-colorblind.png (79840 bytes)
+$ godot --path . -- --studio-capture=<home>\.dsh\state\superagent-sokoban\work\visual-polish-67256e2db6fc\production\qa\evidence\visual-polish\level-010-colorblind.png --level=level-010 --colorblind=1
+[capture] OK: <home>\.dsh\state\superagent-sokoban\work\visual-polish-67256e2db6fc\production\qa\evidence\visual-polish\level-010-colorblind.png (79840 bytes)

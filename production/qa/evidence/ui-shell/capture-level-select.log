@@ -1,6 +1,6 @@
-[capture] removed stale file: .\production\qa\evidence\ui-shell\level-select.png
-[capture] target: .\production\qa\evidence\ui-shell\level-select.png
+[capture] removed stale file: <home>\.dsh\state\superagent-sokoban\work\ui-shell-actions-7730baf5f713\production\qa\evidence\ui-shell\level-select.png
+[capture] target: <home>\.dsh\state\superagent-sokoban\work\ui-shell-actions-7730baf5f713\production\qa\evidence\ui-shell\level-select.png
 [capture] user arguments: --screen=level-select
 [capture] waiting up to 60s for the PNG
-$ godot --path . -- --studio-capture=.\production\qa\evidence\ui-shell\level-select.png --screen=level-select
-[capture] OK: .\production\qa\evidence\ui-shell\level-select.png (27502 bytes)
+$ godot --path . -- --studio-capture=<home>\.dsh\state\superagent-sokoban\work\ui-shell-actions-7730baf5f713\production\qa\evidence\ui-shell\level-select.png --screen=level-select
+[capture] OK: <home>\.dsh\state\superagent-sokoban\work\ui-shell-actions-7730baf5f713\production\qa\evidence\ui-shell\level-select.png (27502 bytes)

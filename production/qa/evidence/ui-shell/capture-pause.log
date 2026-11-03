@@ -1,6 +1,6 @@
-[capture] removed stale file: .\production\qa\evidence\ui-shell\pause.png
-[capture] target: .\production\qa\evidence\ui-shell\pause.png
+[capture] removed stale file: <home>\.dsh\state\superagent-sokoban\work\ui-shell-actions-7730baf5f713\production\qa\evidence\ui-shell\pause.png
+[capture] target: <home>\.dsh\state\superagent-sokoban\work\ui-shell-actions-7730baf5f713\production\qa\evidence\ui-shell\pause.png
 [capture] user arguments: --screen=pause --level=1 --script=right,right
 [capture] waiting up to 60s for the PNG
-$ godot --path . -- --studio-capture=.\production\qa\evidence\ui-shell\pause.png --screen=pause --level=1 --script=right,right
-[capture] OK: .\production\qa\evidence\ui-shell\pause.png (30939 bytes)
+$ godot --path . -- --studio-capture=<home>\.dsh\state\superagent-sokoban\work\ui-shell-actions-7730baf5f713\production\qa\evidence\ui-shell\pause.png --screen=pause --level=1 --script=right,right
+[capture] OK: <home>\.dsh\state\superagent-sokoban\work\ui-shell-actions-7730baf5f713\production\qa\evidence\ui-shell\pause.png (30939 bytes)

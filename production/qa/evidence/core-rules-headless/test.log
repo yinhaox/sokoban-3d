@@ -1,4 +1,4 @@
-[test] project: .
+[test] project: <home>\.dsh\state\superagent-sokoban\work\headless-core-rules-2e011fbcc8de
 $ godot --headless --path . -s res://tests/run_tests.gd
 Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
 

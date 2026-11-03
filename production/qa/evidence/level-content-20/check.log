@@ -1,4 +1,4 @@
-[check] project: .
+[check] project: <home>\.dsh\state\superagent-sokoban\work\levels-010-020-3b173eb7abd7
 $ godot --headless --path . --import
 --- output (last 40 line(s)) ---
 [  33% ] [90m[1mfirst_scan_filesystem[22m | 正在校验 GDExtension……[39m[0m

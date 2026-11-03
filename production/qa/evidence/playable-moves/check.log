@@ -1,4 +1,4 @@
-[check] project: .
+[check] project: <home>\.dsh\state\superagent-sokoban\work\playable-moves-176181f579e7
 $ godot --headless --path . --import
 --- output (last 23 line(s)) ---
 Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org

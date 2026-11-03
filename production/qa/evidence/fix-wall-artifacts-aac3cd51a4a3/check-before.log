@@ -1,4 +1,4 @@
-[check] project: .
+[check] project: <home>\.dsh\state\superagent-sokoban\work\sokoban-before
 $ godot --headless --path . --import
 --- output (last 40 line(s)) ---
 [0m

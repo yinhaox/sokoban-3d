@@ -1,4 +1,4 @@
-[check] project: .
+[check] project: <home>\.dsh\state\superagent-sokoban\work\ui-shell-actions-7730baf5f713
 $ godot --headless --path . --import
 --- output (last 16 line(s)) ---
 Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org

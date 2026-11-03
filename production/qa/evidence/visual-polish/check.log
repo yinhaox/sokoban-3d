@@ -1,4 +1,4 @@
-[check] project: .
+[check] project: <home>\.dsh\state\superagent-sokoban\work\visual-polish-67256e2db6fc
 $ godot --headless --path . --import
 --- output (last 16 line(s)) ---
 Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org

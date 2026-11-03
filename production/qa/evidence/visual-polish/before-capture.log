@@ -1,5 +1,5 @@
-[capture] target: .\production\qa\evidence\visual-polish\before-level-010.png
+[capture] target: <home>\.dsh\state\superagent-sokoban\work\visual-polish-67256e2db6fc\production\qa\evidence\visual-polish\before-level-010.png
 [capture] user arguments: --level=level-010
 [capture] waiting up to 60s for the PNG
-$ godot --path . -- --studio-capture=.\production\qa\evidence\visual-polish\before-level-010.png --level=level-010
-[capture] OK: .\production\qa\evidence\visual-polish\before-level-010.png (57719 bytes)
+$ godot --path . -- --studio-capture=<home>\.dsh\state\superagent-sokoban\work\visual-polish-67256e2db6fc\production\qa\evidence\visual-polish\before-level-010.png --level=level-010
+[capture] OK: <home>\.dsh\state\superagent-sokoban\work\visual-polish-67256e2db6fc\production\qa\evidence\visual-polish\before-level-010.png (57719 bytes)

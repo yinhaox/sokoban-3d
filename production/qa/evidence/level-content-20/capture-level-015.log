@@ -1,5 +1,5 @@
-[capture] target: .\production\qa\evidence\level-content-20\level-015.png
+[capture] target: <home>\.dsh\state\superagent-sokoban\work\levels-010-020-3b173eb7abd7\production\qa\evidence\level-content-20\level-015.png
 [capture] user arguments: --screen=gameplay --level=level-015
 [capture] waiting up to 60s for the PNG
-$ godot --path . -- --studio-capture=.\production\qa\evidence\level-content-20\level-015.png --screen=gameplay --level=level-015
-[capture] OK: .\production\qa\evidence\level-content-20\level-015.png (61394 bytes)
+$ godot --path . -- --studio-capture=<home>\.dsh\state\superagent-sokoban\work\levels-010-020-3b173eb7abd7\production\qa\evidence\level-content-20\level-015.png --screen=gameplay --level=level-015
+[capture] OK: <home>\.dsh\state\superagent-sokoban\work\levels-010-020-3b173eb7abd7\production\qa\evidence\level-content-20\level-015.png (61394 bytes)

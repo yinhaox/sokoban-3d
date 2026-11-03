@@ -1,6 +1,6 @@
-[capture] removed stale file: .\production\qa\evidence\playable-moves\goal-filled.png
-[capture] target: .\production\qa\evidence\playable-moves\goal-filled.png
+[capture] removed stale file: <home>\.dsh\state\superagent-sokoban\work\playable-moves-176181f579e7\production\qa\evidence\playable-moves\goal-filled.png
+[capture] target: <home>\.dsh\state\superagent-sokoban\work\playable-moves-176181f579e7\production\qa\evidence\playable-moves\goal-filled.png
 [capture] user arguments: --level=3 --script=left,up,up,right,right,right,right
 [capture] waiting up to 60s for the PNG
-$ godot --path . -- --studio-capture=.\production\qa\evidence\playable-moves\goal-filled.png --level=3 --script=left,up,up,right,right,right,right
-[capture] OK: .\production\qa\evidence\playable-moves\goal-filled.png (35070 bytes)
+$ godot --path . -- --studio-capture=<home>\.dsh\state\superagent-sokoban\work\playable-moves-176181f579e7\production\qa\evidence\playable-moves\goal-filled.png --level=3 --script=left,up,up,right,right,right,right
+[capture] OK: <home>\.dsh\state\superagent-sokoban\work\playable-moves-176181f579e7\production\qa\evidence\playable-moves\goal-filled.png (35070 bytes)

@@ -1,5 +1,5 @@
-[capture] target: .\production\qa\evidence\boot-aids\zh-settings.png
+[capture] target: <home>\.dsh\state\superagent-sokoban\work\boot-aids-8f12e74d1c21\production\qa\evidence\boot-aids\zh-settings.png
 [capture] user arguments: --screen=settings --lang=zh
 [capture] waiting up to 60s for the PNG
-$ godot --path . -- --studio-capture=.\production\qa\evidence\boot-aids\zh-settings.png --screen=settings --lang=zh
-[capture] OK: .\production\qa\evidence\boot-aids\zh-settings.png (38597 bytes)
+$ godot --path . -- --studio-capture=<home>\.dsh\state\superagent-sokoban\work\boot-aids-8f12e74d1c21\production\qa\evidence\boot-aids\zh-settings.png --screen=settings --lang=zh
+[capture] OK: <home>\.dsh\state\superagent-sokoban\work\boot-aids-8f12e74d1c21\production\qa\evidence\boot-aids\zh-settings.png (38597 bytes)

@@ -1,5 +1,5 @@
-[capture] target: .\production\qa\evidence\ui-shell\settings-1280.png
+[capture] target: <home>\.dsh\state\superagent-sokoban\work\ui-shell-actions-7730baf5f713\production\qa\evidence\ui-shell\settings-1280.png
 [capture] user arguments: --screen=settings --window=1280x720
 [capture] waiting up to 60s for the PNG
-$ godot --path . -- --studio-capture=.\production\qa\evidence\ui-shell\settings-1280.png --screen=settings --window=1280x720
-[capture] OK: .\production\qa\evidence\ui-shell\settings-1280.png (38708 bytes)
+$ godot --path . -- --studio-capture=<home>\.dsh\state\superagent-sokoban\work\ui-shell-actions-7730baf5f713\production\qa\evidence\ui-shell\settings-1280.png --screen=settings --window=1280x720
+[capture] OK: <home>\.dsh\state\superagent-sokoban\work\ui-shell-actions-7730baf5f713\production\qa\evidence\ui-shell\settings-1280.png (38708 bytes)

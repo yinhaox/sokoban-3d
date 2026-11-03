@@ -1,6 +1,6 @@
-[capture] removed stale file: .\production\qa\evidence\audio-cues\audio-cues-settings.png
-[capture] target: .\production\qa\evidence\audio-cues\audio-cues-settings.png
+[capture] removed stale file: <home>\.dsh\state\superagent-sokoban\work\audio-cues-2d934f06d8de\production\qa\evidence\audio-cues\audio-cues-settings.png
+[capture] target: <home>\.dsh\state\superagent-sokoban\work\audio-cues-2d934f06d8de\production\qa\evidence\audio-cues\audio-cues-settings.png
 [capture] user arguments: --screen=settings --sfx-volume=0.5 --save=user://evidence-save-audio.json --fresh-save
 [capture] waiting up to 60s for the PNG
-$ godot --path . -- --studio-capture=.\production\qa\evidence\audio-cues\audio-cues-settings.png --screen=settings --sfx-volume=0.5 --save=user://evidence-save-audio.json --fresh-save
-[capture] OK: .\production\qa\evidence\audio-cues\audio-cues-settings.png (41657 bytes)
+$ godot --path . -- --studio-capture=<home>\.dsh\state\superagent-sokoban\work\audio-cues-2d934f06d8de\production\qa\evidence\audio-cues\audio-cues-settings.png --screen=settings --sfx-volume=0.5 --save=user://evidence-save-audio.json --fresh-save
+[capture] OK: <home>\.dsh\state\superagent-sokoban\work\audio-cues-2d934f06d8de\production\qa\evidence\audio-cues\audio-cues-settings.png (41657 bytes)

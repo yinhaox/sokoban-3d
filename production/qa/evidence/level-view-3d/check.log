@@ -1,4 +1,4 @@
-[check] project: .
+[check] project: <home>\.dsh\state\superagent-sokoban\work\iso-room-camera-98ba09ee1820
 $ godot --headless --path . --import
 --- output (last 40 line(s)) ---
 WARNING: Missing .uid file for path "res://src/logic/deadlock.gd". The file was re-created from cache.

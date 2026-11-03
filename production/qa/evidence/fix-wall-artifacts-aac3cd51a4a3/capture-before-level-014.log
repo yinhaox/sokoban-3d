@@ -1,5 +1,5 @@
-[capture] target: .\production\qa\evidence\fix-wall-artifacts-aac3cd51a4a3\before-level-014.png
+[capture] target: <home>\.dsh\state\superagent-sokoban\work\sokoban-before\production\qa\evidence\fix-wall-artifacts-aac3cd51a4a3\before-level-014.png
 [capture] user arguments: --level=level-014
 [capture] waiting up to 60s for the PNG
-$ godot --path . -- --studio-capture=.\production\qa\evidence\fix-wall-artifacts-aac3cd51a4a3\before-level-014.png --level=level-014
-[capture] OK: .\production\qa\evidence\fix-wall-artifacts-aac3cd51a4a3\before-level-014.png (74401 bytes)
+$ godot --path . -- --studio-capture=<home>\.dsh\state\superagent-sokoban\work\sokoban-before\production\qa\evidence\fix-wall-artifacts-aac3cd51a4a3\before-level-014.png --level=level-014
+[capture] OK: <home>\.dsh\state\superagent-sokoban\work\sokoban-before\production\qa\evidence\fix-wall-artifacts-aac3cd51a4a3\before-level-014.png (74401 bytes)

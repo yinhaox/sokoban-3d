@@ -1,9 +1,9 @@
-[run] capture argument: --studio-capture=.\production\qa\evidence\visual-polish\run-window.png
+[run] capture argument: --studio-capture=<home>\.dsh\state\superagent-sokoban\work\visual-polish-67256e2db6fc\production\qa\evidence\visual-polish\run-window.png
 [run] user arguments: --level=level-010
 [run] launching the game window; close it to return control
-$ godot --path . -- --studio-capture=.\production\qa\evidence\visual-polish\run-window.png --level=level-010
+$ godot --path . -- --studio-capture=<home>\.dsh\state\superagent-sokoban\work\visual-polish-67256e2db6fc\production\qa\evidence\visual-polish\run-window.png --level=level-010
 Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
 OpenGL API 3.3.0 NVIDIA 616.56 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 3070 Ti Laptop GPU
 
-studio_capture: wrote .\production\qa\evidence\visual-polish\run-window.png
+studio_capture: wrote <home>\.dsh\state\superagent-sokoban\work\visual-polish-67256e2db6fc\production\qa\evidence\visual-polish\run-window.png
 [run] Godot exited with code 0
