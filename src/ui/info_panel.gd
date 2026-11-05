@@ -1,7 +1,7 @@
 class_name InfoPanel
 extends CanvasLayer
 
-## A read-only placeholder screen: a title, one body and a Back button. Credits
+## A read-only info screen: a title, one body and a Back button. Credits
 ## uses it; the boot scene sets the two translated strings and re-translates them
 ## on a language switch. The panel emits `back_requested` and owns nothing else.
 
